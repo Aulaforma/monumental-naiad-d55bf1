@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración | Aula Forma</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { display: block; overflow: auto; height: auto; background-color: #f8fafc; margin: 0; font-family: var(--font-family); }
+        .topbar { background: #0f172a; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; color: white; }
+        .topbar-logo { display: flex; align-items: center; gap: 0.75rem; text-decoration: none; color: white; font-weight: bold; font-size: 1.25rem; }
+        .container { max-width: 1200px; margin: 2rem auto; padding: 0 1.5rem; }
+        .card { background: white; border-radius: var(--radius-xl); box-shadow: var(--shadow-sm); padding: 2rem; border: 1px solid var(--border); margin-bottom: 2rem; }
+        
+        .header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .search-box { display: flex; gap: 0.5rem; }
+        .search-box input { min-width: 300px; }
+        
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border-light); }
+        th { font-weight: 600; color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; background: #f8fafc; }
+        tr:hover { background-color: #f8fafc; }
+        
+        .badge { display: inline-block; padding: 0.25rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+        .badge-active { background: #dcfce7; color: #166534; }
+        .badge-pending { background: #fef9c3; color: #854d0e; }
+        
+        .btn-sm { padding: 0.35rem 0.75rem; font-size: 0.8rem; }
+        
+        .tabs { display: flex; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-light); }
+        .tab { padding: 0.75rem 1.5rem; cursor: pointer; border-bottom: 2px solid transparent; color: var(--text-muted); font-weight: 600; }
+        .tab.active { border-bottom-color: var(--primary); color: var(--primary); }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <a href="perfil.html" class="topbar-logo">
+            <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #ef4444, #b91c1c); border-radius: 6px; display: flex; align-items: center; justify-content: center;">
+                <svg viewBox="0 0 24 24" width="18" height="18" stroke="white" stroke-width="2.5" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            Panel Admin Aula Forma
+        </a>
+        <a href="perfil.html" class="btn btn-outline" style="border-color: rgba(255,255,255,0.2); color: white; padding: 0.5rem 1rem; border-radius: 9999px; font-size: 0.9rem;">Volver a Mi Perfil</a>
+    </header>
+
+    <div class="container" id="admin-content" style="display: none;">
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('users')" id="tab-users">Usuarios Registrados</div>
+            <div class="tab" onclick="switchTab('purchases')" id="tab-purchases">Compras Pendientes</div>
+        </div>
+
+        <!-- Vista Usuarios -->
+        <div id="view-users" class="card">
+            <div class="header-actions">
+                <h2 style="margin: 0; font-size: 1.25rem;">Gestión de Usuarios</h2>
+                <div class="search-box">
+                    <input type="text" id="search-users" class="form-control" placeholder="Buscar por nombre o correo...">
+                    <button class="btn btn-primary" onclick="loadUsers()">Buscar</button>
+                </div>
+            </div>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Usuario</th>
+                            <th>Correo</th>
+                            <th>Tipo</th>
+                            <th>Créditos</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-table-body">
+                        <tr><td colspan="6" style="text-align: center;">Cargando usuarios...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Vista Compras -->
+        <div id="view-purchases" class="card" style="display: none;">
+            <div class="header-actions">
+                <h2 style="margin: 0; font-size: 1.25rem;">Verificación de Pagos</h2>
+                <button class="btn btn-outline btn-sm" onclick="loadPurchases()">Actualizar</button>
+            </div>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>ID Usuario</th>
+                            <th>Pack</th>
+                            <th>Monto</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="purchases-table-body">
+                        <tr><td colspan="6" style="text-align: center;">Cargando compras...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div id="access-denied" style="text-align: center; margin-top: 5rem; display: none;">
+        <h2>Acceso Denegado</h2>
+        <p>No tienes permisos de administrador para ver esta página.</p>
+        <a href="index.html" class="btn btn-primary">Ir al Inicio</a>
+    </div>
+
+    <script src="js/supabase-client.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const session = await getCurrentSession();
+            if (!session) {
+                window.location.href = 'auth.html';
+                return;
+            }
+
+            // Verificar si es admin
+            const { data: profile } = await supabase
+                .from('perfiles')
+                .select('is_admin')
+                .eq('id', session.user.id)
+                .single();
+
+            if (profile && profile.is_admin) {
+                document.getElementById('admin-content').style.display = 'block';
+                loadUsers();
+            } else {
+                document.getElementById('access-denied').style.display = 'block';
+            }
+        });
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('view-users').style.display = 'none';
+            document.getElementById('view-purchases').style.display = 'none';
+            
+            document.getElementById('tab-' + tabId).classList.add('active');
+            document.getElementById('view-' + tabId).style.display = 'block';
+            
+            if (tabId === 'users') loadUsers();
+            if (tabId === 'purchases') loadPurchases();
+        }
+
+        async function loadUsers() {
+            const search = document.getElementById('search-users').value.toLowerCase();
+            
+            let query = supabase.from('perfiles').select('*').order('fecha_registro', { ascending: false }).limit(50);
+            
+            if (search) {
+                query = query.or(`nombre_completo.ilike.%${search}%,correo.ilike.%${search}%`);
+            }
+
+            const { data, error } = await query;
+            const tbody = document.getElementById('users-table-body');
+            
+            if (error) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: red;">Error: ${error.message}</td></tr>`;
+                return;
+            }
+
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center;">No se encontraron usuarios.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = '';
+            data.forEach(user => {
+                const isUserAdmin = user.is_admin;
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>${user.nombre_completo || 'Usuario sin nombre'}</strong></td>
+                        <td>${user.correo}</td>
+                        <td>${user.tipo_usuario || 'Docente'}</td>
+                        <td><strong>${user.creditos_disponibles}</strong></td>
+                        <td><span class="badge ${isUserAdmin ? 'badge-active' : ''}">${isUserAdmin ? 'Admin' : 'Usuario'}</span></td>
+                        <td>
+                            <button class="btn btn-outline btn-sm" onclick="addCredits('${user.id}', '${user.nombre_completo || 'Usuario'}')">Modificar Créditos</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function addCredits(userId, userName) {
+            const amountStr = prompt(`¿Cuántos créditos deseas agregar o restar (usa -) a ${userName}?`);
+            if (!amountStr) return;
+            const amount = parseInt(amountStr);
+            if (isNaN(amount)) return;
+
+            // Al ser admin, la politica RLS permite actualizar otros perfiles
+            // Primero obtenemos los actuales
+            const { data: user } = await supabase.from('perfiles').select('creditos_disponibles').eq('id', userId).single();
+            const newTotal = (user?.creditos_disponibles || 0) + amount;
+
+            const { error } = await supabase.from('perfiles').update({ creditos_disponibles: newTotal }).eq('id', userId);
+            
+            if (error) {
+                alert("Error al actualizar: " + error.message);
+            } else {
+                alert(`Se han actualizado los créditos. Nuevo total: ${newTotal}`);
+                loadUsers();
+            }
+        }
+
+        async function loadPurchases() {
+            const { data, error } = await supabase
+                .from('compras')
+                .select('*, packs_creditos(nombre_pack, cantidad_creditos), perfiles(nombre_completo, correo)')
+                .eq('estado_pago', 'pendiente')
+                .order('fecha_compra', { ascending: false });
+
+            const tbody = document.getElementById('purchases-table-body');
+            
+            if (error) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: red;">Error: ${error.message}</td></tr>`;
+                return;
+            }
+
+            if (!data || data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center;">No hay compras pendientes.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = '';
+            data.forEach(compra => {
+                const date = new Date(compra.fecha_compra).toLocaleString('es-CL');
+                const nombreUsuario = compra.perfiles ? compra.perfiles.nombre_completo || 'Usuario' : 'Desconocido';
+                const correoUsuario = compra.perfiles ? compra.perfiles.correo : '';
+                const nombrePack = compra.packs_creditos ? compra.packs_creditos.nombre_pack : 'Pack';
+                const creditos = compra.packs_creditos ? compra.packs_creditos.cantidad_creditos : 0;
+                
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${date}</td>
+                        <td>
+                            <strong>${nombreUsuario}</strong><br>
+                            <span style="font-size: 0.8rem; color: gray;">${correoUsuario}</span>
+                        </td>
+                        <td>${nombrePack} (${creditos} cr)</td>
+                        <td>$${compra.monto.toLocaleString('es-CL')}</td>
+                        <td><span class="badge badge-pending">Pendiente</span></td>
+                        <td>
+                            <button class="btn btn-primary btn-sm" onclick="approvePurchase('${compra.id_compra}', '${compra.id_usuario}', ${creditos})">Aprobar y Cargar</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function approvePurchase(compId, userId, creditosToAdd) {
+            if(!confirm(`¿Estás seguro de aprobar esta compra y cargar ${creditosToAdd} créditos al usuario?`)) return;
+
+            try {
+                // 1. Obtener creditos actuales
+                const { data: user } = await supabase.from('perfiles').select('creditos_disponibles').eq('id', userId).single();
+                const newTotal = (user?.creditos_disponibles || 0) + creditosToAdd;
+
+                // 2. Actualizar creditos
+                const { error: err1 } = await supabase.from('perfiles').update({ creditos_disponibles: newTotal }).eq('id', userId);
+                if (err1) throw err1;
+
+                // 3. Marcar compra como aprobada
+                const { error: err2 } = await supabase.from('compras').update({ 
+                    estado_pago: 'aprobado',
+                    fecha_activacion: new Date().toISOString()
+                }).eq('id_compra', compId);
+                if (err2) throw err2;
+
+                alert('Compra aprobada y créditos cargados correctamente.');
+                loadPurchases();
+
+            } catch(e) {
+                alert("Error al procesar: " + e.message);
+            }
+        }
+    </script>
+</body>
+</html>

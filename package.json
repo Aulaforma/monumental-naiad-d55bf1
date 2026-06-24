@@ -1,0 +1,10 @@
+{
+  "name": "constructor-evaluaciones",
+  "version": "1.0.0",
+  "description": "Herramienta educativa para docentes para la creación de evaluaciones con IA.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {}
+}

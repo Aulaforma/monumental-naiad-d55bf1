@@ -1,0 +1,31 @@
+[build]
+  publish = "."
+  functions = "netlify/functions"
+  command = ""
+
+[build.environment]
+  SECRETS_SCAN_ENABLED = "false"
+
+[[redirects]]
+  from = "/api/upload-materia"
+  to = "/.netlify/functions/upload-materia"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/regenerate-item"
+  to = "/.netlify/functions/regenerate-item"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/create-payment"
+  to = "/.netlify/functions/create-payment"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/mercadopago-webhook"
+  to = "/.netlify/functions/mercadopago-webhook"
+  status = 200
+  force = true

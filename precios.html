@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprar Créditos | Aula Forma</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { display: block; overflow: auto; height: auto; background-color: #f8fafc; margin: 0; font-family: var(--font-family); }
+        .topbar { background: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+        .topbar-logo { display: flex; align-items: center; gap: 0.75rem; text-decoration: none; color: var(--text-main); font-weight: bold; font-size: 1.25rem; }
+        
+        .pricing-container { max-width: 1200px; margin: 3rem auto; padding: 0 2rem; }
+        .pricing-header { text-align: center; margin-bottom: 3rem; }
+        .pricing-header h1 { font-size: 2.5rem; color: var(--text-main); margin-bottom: 1rem; }
+        .pricing-header p { font-size: 1.1rem; color: var(--text-muted); max-width: 600px; margin: 0 auto; }
+        
+        .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem; }
+        .pricing-card { background: white; border-radius: var(--radius-xl); padding: 2.5rem 2rem; border: 1px solid var(--border); display: flex; flex-direction: column; text-align: center; transition: transform 0.2s, box-shadow 0.2s; position: relative; overflow: hidden; }
+        .pricing-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-md); }
+        .pricing-card.popular { border-color: var(--primary); box-shadow: 0 10px 25px -5px rgba(92, 96, 245, 0.2); }
+        .popular-badge { position: absolute; top: 0; right: 0; background: var(--primary); color: white; font-size: 0.75rem; font-weight: bold; padding: 0.5rem 1.5rem; transform: translate(30%, 50%) rotate(45deg); width: 120px; }
+        
+        .pack-name { font-size: 1.25rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.5rem; }
+        .pack-price { font-size: 2.5rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.5rem; display: flex; justify-content: center; align-items: baseline; }
+        .pack-price span { font-size: 1rem; color: var(--text-muted); font-weight: normal; margin-left: 0.25rem; }
+        .pack-credits { color: var(--primary); font-weight: 600; margin-bottom: 1.5rem; font-size: 1.1rem; }
+        .pack-features { list-style: none; padding: 0; margin: 0 0 2rem 0; text-align: left; }
+        .pack-features li { padding: 0.5rem 0; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem; font-size: 0.95rem; border-bottom: 1px solid var(--border-light); }
+        .pack-features li:last-child { border-bottom: none; }
+        .pack-features li svg { color: #10b981; }
+        
+        .btn-buy { margin-top: auto; width: 100%; padding: 0.875rem; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; border: none; font-size: 1rem; transition: background-color 0.2s; }
+        .btn-buy-primary { background: var(--primary); color: white; }
+        .btn-buy-primary:hover { background: #4a4ed8; }
+        .btn-buy-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
+        .btn-buy-outline:hover { background: #f5f3ff; }
+
+        /* Modal */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 1000; }
+        .modal { background: white; width: 90%; max-width: 500px; border-radius: var(--radius-xl); padding: 2rem; box-shadow: var(--shadow-lg); position: relative; }
+        .modal-close { position: absolute; top: 1rem; right: 1rem; background: none; border: none; cursor: pointer; color: var(--text-muted); }
+        .modal-close:hover { color: var(--text-main); }
+        .modal h2 { margin-top: 0; margin-bottom: 1.5rem; color: var(--text-main); font-size: 1.5rem; }
+        
+        .transfer-details { background: #f8fafc; border: 1px solid var(--border); padding: 1.5rem; border-radius: var(--radius-md); margin-bottom: 1.5rem; font-family: monospace; font-size: 0.9rem; }
+        .transfer-details p { margin: 0.5rem 0; color: var(--text-main); }
+        .transfer-details strong { color: var(--primary); }
+        
+        .modal-instructions { color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.5rem; }
+        
+        .modal-actions { display: flex; gap: 1rem; flex-direction: column; }
+        .btn-whatsapp { background: #25D366; color: white; text-align: center; padding: 0.75rem; border-radius: var(--radius-md); text-decoration: none; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+        .btn-whatsapp:hover { background: #128C7E; }
+        .btn-email { background: transparent; color: var(--text-main); border: 1px solid var(--border); text-align: center; padding: 0.75rem; border-radius: var(--radius-md); text-decoration: none; font-weight: 600; }
+        .btn-email:hover { background: #f8fafc; }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <a href="index.html" class="topbar-logo">
+            <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #5c60f5, #7f56d9); border-radius: 6px; display: flex; align-items: center; justify-content: center;">
+                <svg viewBox="0 0 24 24" width="18" height="18" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/><path d="M12 7v14M9 11l3 3 6-6"/></svg>
+            </div>
+            Aula Forma
+        </a>
+        <div class="topbar-nav" style="display: flex; gap: 1rem; align-items: center;">
+            <a href="javascript:history.back()" style="color: var(--text-muted); text-decoration: none; font-size: 0.9rem; font-weight: 500; display: flex; align-items: center; gap: 0.25rem;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg> Volver
+            </a>
+            <a href="perfil.html" class="btn btn-outline" style="padding: 0.5rem 1rem; border-radius: 9999px; font-size: 0.9rem;">Mi Panel</a>
+            <a href="dashboard.html" class="btn btn-primary" style="padding: 0.5rem 1rem; border-radius: 9999px; font-size: 0.9rem;">Generador</a>
+        </div>
+    </header>
+
+    <div class="pricing-container">
+        <div class="pricing-header">
+            <h1>Packs de Créditos</h1>
+            <p>Elige el plan que mejor se adapte a tus necesidades. Genera rúbricas, evaluaciones y pautas al instante. 1 Crédito = 1 Documento básico.</p>
+        </div>
+
+        <div class="pricing-grid">
+            <!-- Pack Inicial -->
+            <div class="pricing-card">
+                <div class="pack-name">Pack Inicial</div>
+                <div class="pack-price">$3.500<span> CLP</span></div>
+                <div class="pack-credits">10 Descargables</div>
+                <ul class="pack-features">
+                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Documentos ilimitados</li>
+                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Descarga en Word</li>
+                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Sin fecha de expiración</li>
+                </ul>
+                <button class="btn-buy btn-buy-outline" onclick="openModal('Pack Inicial', 10, 3500, 2)">Comprar pack</button>
+            </div>
+
+            <!-- Pack Docente -->
+            <div class="pricing-card popular">
+                <div class="popular-badge">Recomendado</div>
+                <div class="pack-name">Pack Docente</div>
+                <div class="pack-price">$4.990<span> CLP</span></div>
+                <div class="pack-credits">15 Descargables</div>
+                <ul class="pack-features">
+                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Documentos ilimitados</li>
+                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Descarga en Word</li>
+                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Mejor valor por crédito</li>
+                </ul>
+                <button class="btn-buy btn-buy-primary" onclick="openModal('Pack Docente', 15, 4990, 3)">Comprar pack</button>
+            </div>
+
+            <!-- Pack Aula -->
+            <div class="pricing-card">
+                <div class="pack-name">Pack Aula</div>
+                <div class="pack-price">$7.990<span> CLP</span></div>
+                <div class="pack-credits">25 Descargables</div>
+                <ul class="pack-features">
+                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Documentos ilimitados</li>
+                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Ideal uso constante</li>
+                </ul>
+                <button class="btn-buy btn-buy-outline" onclick="openModal('Pack Aula', 25, 7990, 4)">Comprar pack</button>
+            </div>
+
+            <!-- Pack Departamento -->
+            <div class="pricing-card">
+                <div class="pack-name">Pack Depto.</div>
+                <div class="pack-price">$14.990<span> CLP</span></div>
+                <div class="pack-credits">50 Descargables</div>
+                <ul class="pack-features">
+                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Ideal para equipos</li>
+                </ul>
+                <button class="btn-buy btn-buy-outline" onclick="openModal('Pack Departamento', 50, 14990, 5)">Comprar pack</button>
+            </div>
+
+            <!-- Pack UTP -->
+            <div class="pricing-card">
+                <div class="pack-name">Pack UTP</div>
+                <div class="pack-price">$29.990<span> CLP</span></div>
+                <div class="pack-credits">100 Descargables</div>
+                <ul class="pack-features">
+                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Para instituciones</li>
+                </ul>
+                <button class="btn-buy btn-buy-outline" onclick="openModal('Pack UTP', 100, 29990, 6)">Comprar pack</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alerta en la parte superior -->
+    <div id="top-alert" style="display: none; max-width: 1200px; margin: 1rem auto; padding: 1rem; border-radius: var(--radius-md); font-weight: 600; text-align: center;"></div>
+
+    <!-- Modal de Pago (Mercado Pago + Manual) -->
+    <div id="payment-modal" class="modal-overlay">
+        <div class="modal">
+            <button class="modal-close" onclick="closeModal()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+            
+            <h2>Confirmar Compra</h2>
+            
+            <div class="transfer-details">
+                <p>Pack seleccionado: <strong id="modal-pack-name">Pack</strong></p>
+                <p>Créditos: <strong id="modal-pack-credits">0</strong> descargables</p>
+                <p style="font-size: 1.1rem; margin-top: 1rem; border-top: 1px solid #cbd5e1; padding-top: 0.5rem;">Total a pagar: <strong id="modal-pack-price"></strong></p>
+            </div>
+            
+            <div class="modal-actions" style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                <!-- Botón Pago Automático -->
+                <button id="btn-pay-automatic" class="btn-buy" style="background: linear-gradient(135deg, #009ee3, #0080ff); color: white; display: flex; align-items: center; justify-content: center; gap: 0.5rem; border: none; font-weight: bold; width: 100%;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+                    Pagar con Tarjeta / Webpay
+                </button>
+
+                <!-- Toggle para transferencia manual -->
+                <button id="btn-toggle-manual" class="btn-email" onclick="toggleManualSection()" style="cursor: pointer; border: 1px solid var(--border); width: 100%;">
+                    Ver datos para Transferencia Bancaria
+                </button>
+            </div>
+            
+            <!-- Bloque de Transferencia Manual (oculto por defecto) -->
+            <div id="manual-transfer-section" style="display: none; border-top: 1px solid #e2e8f0; margin-top: 1.5rem; padding-top: 1rem;">
+                <p class="modal-instructions" style="margin-bottom: 1.25rem;">
+                    <strong>1.</strong> Realiza la transferencia a la cuenta RUT: <strong>22.406.864-6</strong> a nombre de <strong>Sofía Muñoz Vidal</strong> (Banco Estado).<br><br>
+                    <strong>2.</strong> Luego, envía el comprobante por WhatsApp o correo. Activaremos tus créditos al confirmar el pago.
+                </p>
+                <div class="modal-actions" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    <button id="btn-confirm-purchase" class="btn-buy btn-buy-primary" style="width: 100%;">Dejar registro de compra pendiente</button>
+                    <a href="https://wa.me/56923897485" target="_blank" class="btn-whatsapp" style="width: 100%;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                        Enviar comprobante por WhatsApp
+                    </a>
+                    <a href="mailto:aulaforma2026@gmail.com" class="btn-email" style="width: 100%;">
+                        Enviar al correo aulaforma2026@gmail.com
+                    </a>
+                </div>
+                
+                <div id="purchase-alert" style="display: none; padding: 1rem; background: #f0fdf4; color: #22c55e; border: 1px solid #86efac; border-radius: 8px; margin-top: 1rem; font-size: 0.9rem; text-align: center;">
+                    ¡Tu registro de compra ha sido guardado! Enviaremos la activación una vez confirmado el comprobante.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Simulación de Pago (solo visible si simulated_checkout=true) -->
+    <div id="simulation-modal" class="modal-overlay">
+        <div class="modal" style="border: 2px dashed #f59e0b; max-width: 480px;">
+            <h2 style="color: #d97706; display: flex; align-items: center; gap: 0.5rem;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                [Simulador de Pago] Mercado Pago
+            </h2>
+            <div style="background: #fffbeb; border: 1px solid #fef3c7; padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.5rem; color: #b45309; font-size: 0.9rem; line-height: 1.5; text-align: left;">
+                Estás visualizando el simulador local de Aula Forma porque no se ha configurado un token real (`MERCADOPAGO_ACCESS_TOKEN`) en las variables de entorno. Puedes simular el éxito para cargar los créditos de inmediato.
+            </div>
+            <div class="transfer-details" style="text-align: left;">
+                <p>Pack: <strong id="sim-pack-name">Pack</strong></p>
+                <p>Monto: <strong id="sim-pack-price">$0</strong></p>
+                <p>ID Compra: <strong id="sim-compra-id" style="font-size: 0.75rem; color: #64748b; font-family: monospace;"></strong></p>
+            </div>
+            <div class="modal-actions" style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem; width: 100%;">
+                <button id="btn-simulate-approve" class="btn-buy" style="background: #10b981; color: white; border: none; font-weight: bold; width: 100%;">
+                    Simular Pago Aprobado (Acreditar)
+                </button>
+                <button id="btn-simulate-reject" class="btn-email" style="border-color: #ef4444; color: #ef4444; width: 100%;">
+                    Simular Cancelar Pago
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/supabase-client.js"></script>
+    <script>
+        let currentSession = null;
+        let currentPack = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            currentSession = await getCurrentSession();
+            
+            // Detectar estado de compra por parámetros URL
+            const params = new URLSearchParams(window.location.search);
+            const status = params.get('status');
+            const alertEl = document.getElementById('top-alert');
+            
+            if (status === 'failure') {
+                alertEl.style.display = 'block';
+                alertEl.style.background = '#fef2f2';
+                alertEl.style.color = '#ef4444';
+                alertEl.style.border = '1px solid #fca5a5';
+                alertEl.textContent = 'El pago fue rechazado o cancelado. Por favor, intenta de nuevo o realiza una transferencia manual.';
+            } else if (status === 'pending') {
+                alertEl.style.display = 'block';
+                alertEl.style.background = '#fffbeb';
+                alertEl.style.color = '#b45309';
+                alertEl.style.border = '1px solid #fde68a';
+                alertEl.textContent = 'Tu pago está pendiente de confirmación. Te notificaremos cuando se active.';
+            }
+
+            // Detectar si estamos en flujo de simulación local
+            if (params.get('simulated_checkout') === 'true') {
+                const simId = params.get('id_compra');
+                const simPrice = params.get('price');
+                const simName = params.get('packName');
+
+                document.getElementById('sim-pack-name').textContent = simName;
+                document.getElementById('sim-pack-price').textContent = '$' + Number(simPrice).toLocaleString('es-CL');
+                document.getElementById('sim-compra-id').textContent = simId;
+
+                document.getElementById('simulation-modal').style.display = 'flex';
+            }
+        });
+
+        function openModal(name, credits, price, packId) {
+            if (!currentSession) {
+                alert("Debes iniciar sesión primero para poder comprar.");
+                window.location.href = 'auth.html';
+                return;
+            }
+
+            currentPack = { id: packId, name, credits, price };
+            
+            document.getElementById('modal-pack-name').textContent = name;
+            document.getElementById('modal-pack-credits').textContent = credits;
+            document.getElementById('modal-pack-price').textContent = '$' + price.toLocaleString('es-CL');
+            
+            document.getElementById('purchase-alert').style.display = 'none';
+            document.getElementById('btn-confirm-purchase').style.display = 'block';
+            document.getElementById('manual-transfer-section').style.display = 'none';
+            document.getElementById('btn-toggle-manual').textContent = 'Ver datos para Transferencia Bancaria';
+            
+            document.getElementById('payment-modal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('payment-modal').style.display = 'none';
+        }
+
+        function toggleManualSection() {
+            const section = document.getElementById('manual-transfer-section');
+            const btn = document.getElementById('btn-toggle-manual');
+            if (section.style.display === 'none') {
+                section.style.display = 'block';
+                btn.textContent = 'Ocultar datos de Transferencia';
+            } else {
+                section.style.display = 'none';
+                btn.textContent = 'Ver datos para Transferencia Bancaria';
+            }
+        }
+
+        // Lógica de Pago Automático (Mercado Pago)
+        document.getElementById('btn-pay-automatic').addEventListener('click', async () => {
+            if (!currentSession || !currentPack) return;
+            
+            const btn = document.getElementById('btn-pay-automatic');
+            btn.disabled = true;
+            btn.textContent = 'Iniciando pago seguro...';
+            
+            try {
+                // Si es modo simulación (isMockMode), simulamos la creación de compra e iniciamos checkout simulado
+                if (window.isMockMode) {
+                    const id_compra = 'simulated-' + Date.now();
+                    
+                    // Guardamos la compra localmente en nuestra DB de prueba en LocalStorage
+                    await supabase.from('compras').insert({
+                        id_compra: id_compra,
+                        id_usuario: currentSession.user.id,
+                        id_pack: currentPack.id,
+                        monto: currentPack.price,
+                        estado_pago: 'pendiente',
+                        metodo_pago: 'mercado_pago'
+                    });
+
+                    console.log("Simulación local (file://): Compra registrada con ID: " + id_compra);
+                    
+                    setTimeout(() => {
+                        // Redirigimos a la misma página precios.html con el parámetro simulated_checkout
+                        window.location.href = `precios.html?simulated_checkout=true&id_compra=${id_compra}&price=${currentPack.price}&packName=${encodeURIComponent(currentPack.name)}`;
+                    }, 800);
+                    return;
+                }
+
+                // 1. Registrar la compra con estado pendiente en Supabase
+                const { data, error } = await supabase.from('compras').insert({
+                    id_usuario: currentSession.user.id,
+                    id_pack: currentPack.id,
+                    monto: currentPack.price,
+                    estado_pago: 'pendiente',
+                    metodo_pago: 'mercado_pago'
+                }).select('id_compra').single();
+
+                if (error) throw error;
+                
+                const id_compra = data.id_compra;
+                
+                // 2. Solicitar preferencia de pago a nuestra Netlify Function
+                const response = await fetch('/api/create-payment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentSession.access_token}`
+                    },
+                    body: JSON.stringify({
+                        id_compra,
+                        packId: currentPack.id,
+                        packName: currentPack.name,
+                        price: currentPack.price
+                    })
+                });
+                
+                if (!response.ok) throw new Error('Error al inicializar la pasarela.');
+                
+                const responseData = await response.json();
+                if (responseData.success && responseData.init_point) {
+                    // Redirigir a Mercado Pago (o al simulador local)
+                    window.location.href = responseData.init_point;
+                } else {
+                    throw new Error('Respuesta inválida del servidor de pagos.');
+                }
+            } catch (error) {
+                console.error("Error al iniciar pago automático:", error);
+                alert("Hubo un error al iniciar el pago seguro. Por favor, intenta de nuevo o utiliza la transferencia manual.");
+                btn.disabled = false;
+                btn.textContent = 'Pagar con Tarjeta / Webpay';
+            }
+        });
+
+        // Lógica de Transferencia Bancaria (Manual)
+        document.getElementById('btn-confirm-purchase').addEventListener('click', async () => {
+            if (!currentSession || !currentPack) return;
+            
+            const btn = document.getElementById('btn-confirm-purchase');
+            btn.disabled = true;
+            btn.textContent = 'Guardando...';
+            
+            try {
+                // Registrar compra en Supabase (status pendiente)
+                const { error } = await supabase.from('compras').insert({
+                    id_usuario: currentSession.user.id,
+                    id_pack: currentPack.id,
+                    monto: currentPack.price,
+                    estado_pago: 'pendiente',
+                    metodo_pago: 'transferencia manual'
+                });
+
+                if (error) throw error;
+                
+                document.getElementById('purchase-alert').style.display = 'block';
+                btn.style.display = 'none';
+            } catch (error) {
+                console.error("Error al registrar compra manual:", error);
+                alert("Hubo un error al registrar la compra. De todas formas puedes enviar el comprobante.");
+                btn.disabled = false;
+                btn.textContent = 'Reintentar registro';
+            }
+        });
+
+        // Lógica del simulador local
+        const btnSimApprove = document.getElementById('btn-simulate-approve');
+        if (btnSimApprove) {
+            btnSimApprove.addEventListener('click', async () => {
+                btnSimApprove.disabled = true;
+                btnSimApprove.textContent = 'Acreditando compra simulada...';
+                
+                const params = new URLSearchParams(window.location.search);
+                const id_compra = params.get('id_compra');
+                
+                try {
+                    // Si es modo simulación (isMockMode), simulamos la acreditación modificando LocalStorage
+                    if (window.isMockMode) {
+                        const { data: compra } = await supabase.from('compras').select('*').eq('id_compra', id_compra).single();
+                        if (compra) {
+                            // 1. Actualizar compra a aprobada
+                            await supabase.from('compras').update({
+                                estado_pago: 'aprobado',
+                                fecha_activacion: new Date().toISOString()
+                            }).eq('id_compra', id_compra);
+
+                            // 2. Acreditar los créditos al perfil
+                            const { data: profile } = await supabase.from('perfiles').select('*').eq('id', compra.id_usuario).single();
+                            if (profile) {
+                                let creditosToAdd = 10;
+                                if (compra.id_pack === 3) creditosToAdd = 15;
+                                else if (compra.id_pack === 4) creditosToAdd = 25;
+                                else if (compra.id_pack === 5) creditosToAdd = 50;
+                                else if (compra.id_pack === 6) creditosToAdd = 100;
+                                
+                                const newCredits = (profile.creditos_disponibles || 0) + creditosToAdd;
+                                await supabase.from('perfiles').update({
+                                    creditos_disponibles: newCredits
+                                }).eq('id', compra.id_usuario);
+                                
+                                alert(`[Simulación Local] ¡Pago aprobado con éxito! Se cargaron ${creditosToAdd} créditos.`);
+                            }
+                        }
+                        window.location.href = 'perfil.html?status=success';
+                        return;
+                    }
+
+                    const response = await fetch(`/api/mercadopago-webhook?simulate_approval=true&id_compra=${id_compra}`);
+                    if (!response.ok) throw new Error('Error al conectar con el servidor.');
+                    
+                    const result = await response.json();
+                    if (result.success) {
+                        alert(`[Simulación] Pago acreditado exitosamente. Se cargaron ${result.creditos_cargados} créditos.`);
+                        window.location.href = 'perfil.html?status=success';
+                    } else {
+                        throw new Error(result.error || 'No se pudo cargar los créditos.');
+                    }
+                } catch (err) {
+                    alert("Error simulando la aprobación: " + err.message);
+                    btnSimApprove.disabled = false;
+                    btnSimApprove.textContent = 'Simular Pago Aprobado (Acreditar)';
+                }
+            });
+        }
+
+        const btnSimReject = document.getElementById('btn-simulate-reject');
+        if (btnSimReject) {
+            btnSimReject.addEventListener('click', () => {
+                window.location.href = 'precios.html?status=failure';
+            });
+        }
+    </script>
+</body>
+</html>

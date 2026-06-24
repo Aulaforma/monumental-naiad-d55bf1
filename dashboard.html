@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AulaForma | Dashboard</title>
+    <meta name="description" content="Plataforma educativa para crear evaluaciones, rúbricas y escalas de apreciación.">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-client.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const session = await getCurrentSession();
+                if (!session) {
+                    window.location.href = 'auth.html';
+                    return;
+                }
+                
+                // Set user initials and name
+                const { data: profile, error } = await supabase
+                    .from('perfiles')
+                    .select('nombre_completo')
+                    .eq('id', session.user.id)
+                    .single();
+                    
+                if (profile && profile.nombre_completo) {
+                    document.getElementById('nav-user-name').textContent = profile.nombre_completo;
+                    document.getElementById('nav-user-initial').textContent = profile.nombre_completo.charAt(0).toUpperCase();
+                } else {
+                    document.getElementById('nav-user-name').textContent = 'Mi Perfil';
+                    document.getElementById('nav-user-initial').textContent = 'U';
+                }
+            } catch (err) {
+                console.error("Dashboard auth check failed:", err);
+                // Si hay un error crítico (como caché antigua), enviamos al login por seguridad
+                window.location.href = 'auth.html';
+            }
+        });
+    </script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar glass">
+            <div class="logo-container">
+                <a href="index.html" style="display: flex; align-items: center; gap: 0.75rem; text-decoration: none; color: inherit;">
+                    <div class="logo-icon-box">
+                        <svg viewBox="0 0 24 24" width="22" height="22" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/><path d="M12 7v14M9 11l3 3 6-6"/></svg>
+                    </div>
+                    <h2>AulaForma</h2>
+                </a>
+            </div>
+            
+            <ul class="nav-menu">
+                <li><a href="#" class="nav-item active" id="btn-dashboard">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                    Dashboard
+                </a></li>
+                <li><a href="#" class="nav-item" id="btn-nueva-evaluacion">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+                    Nueva Evaluación
+                </a></li>
+                <li><a href="#" class="nav-item" id="btn-descargar-word-nav">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    Descargar Word
+                </a></li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <svg class="sidebar-decor" viewBox="0 0 180 120" fill="none">
+                    <!-- Books -->
+                    <rect x="35" y="75" width="80" height="15" rx="3" fill="#3b82f6" />
+                    <rect x="33" y="77" width="84" height="4" fill="#60a5fa" />
+                    
+                    <rect x="30" y="90" width="90" height="18" rx="3" fill="#f43f5e" />
+                    <rect x="28" y="92" width="94" height="5" fill="#fda4af" />
+                    
+                    <!-- Mug -->
+                    <rect x="125" y="70" width="22" height="28" rx="4" fill="#f59e0b" />
+                    <path d="M147 77c3 0 5 2 5 5v5c0 3-2 5-5 5h-2v-15h2z" fill="#f59e0b" />
+                    <!-- Pencils -->
+                    <rect x="128" y="50" width="4" height="22" rx="1" fill="#10b981" />
+                    <rect x="135" y="47" width="4" height="25" rx="1" fill="#6366f1" />
+                    <rect x="141" y="52" width="4" height="20" rx="1" fill="#f43f5e" />
+                    
+                    <!-- Plant Pot and leaves -->
+                    <path d="M15 90l3 18h16l3-18H15z" fill="#cbd5e1" />
+                    <path d="M23 70c0 0-8-12-8-22 0 0 10 6 8 22z" fill="#10b981" opacity="0.8" />
+                    <path d="M23 70c0 0 8-12 8-22 0 0-10 6-8 22z" fill="#059669" />
+                    <path d="M15 80c0 0-12-5-18-15 0 0 10-1 18 15z" fill="#10b981" opacity="0.9" />
+                    <path d="M31 82c0 0 12-5 18-15 0 0-10-1-18 15z" fill="#059669" opacity="0.95" />
+                </svg>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Faint background watermarks -->
+            <div class="watermark watermark-airplane">
+                <svg viewBox="0 0 24 24" width="120" height="120" stroke="rgba(99, 102, 241, 0.04)" stroke-width="1.5" fill="none"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+            </div>
+            <div class="watermark watermark-pencil">
+                <svg viewBox="0 0 24 24" width="100" height="100" stroke="rgba(99, 102, 241, 0.04)" stroke-width="1.5" fill="none"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+            </div>
+            <div class="watermark watermark-globe">
+                <svg viewBox="0 0 24 24" width="140" height="140" stroke="rgba(99, 102, 241, 0.04)" stroke-width="1.5" fill="none"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            </div>
+            <div class="watermark watermark-beaker">
+                <svg viewBox="0 0 24 24" width="130" height="130" stroke="rgba(99, 102, 241, 0.04)" stroke-width="1.5" fill="none"><path d="M10 2v8L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45L14 10V2zM6 12h12"/></svg>
+            </div>
+            <!-- Header (Shared) -->
+            <header class="header">
+                <div id="header-text">
+                    <h1>¡Hola, Docente! 👋</h1>
+                    <p class="subject-desc">¿Qué material vamos a preparar hoy?</p>
+                </div>
+                <div class="user-profile" style="cursor: pointer;" onclick="window.location.href='perfil.html'">
+                    <div class="avatar" id="nav-user-initial">U</div>
+                    <span id="nav-user-name">Cargando...</span>
+                </div>
+            </header>
+
+            <!-- VISTA 1: DASHBOARD -->
+            <section class="subjects-section" id="dashboard-view" style="display: flex; justify-content: center; align-items: center; min-height: 80%;">
+                <div style="background: #ffffff; padding: 3.5rem 2.5rem; border-radius: var(--radius-xl); box-shadow: var(--shadow-md); text-align: center; max-width: 500px; width: 100%; border: 1px solid var(--border);">
+                    <div style="width: 70px; height: 70px; background: linear-gradient(135deg, rgba(92, 96, 245, 0.1), rgba(127, 86, 217, 0.1)); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem auto; color: var(--primary);">
+                        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                    </div>
+                    <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.5rem;">Preparar Nuevo Material</h2>
+                    <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem;">Selecciona la asignatura para comenzar</p>
+                    
+                    <div style="text-align: left; margin-bottom: 1.5rem;">
+                        <label for="subject-selector" style="font-size: 0.85rem; font-weight: 600; color: var(--text-main); display: block; margin-bottom: 0.5rem;">Asignatura</label>
+                        <select id="subject-selector" class="form-control" style="width: 100%; font-size: 1rem; padding: 0.75rem 1rem;">
+                            <option value="Lenguaje">Lenguaje</option>
+                            <option value="Matemáticas">Matemáticas</option>
+                            <option value="Historia">Historia, Geografía y Ciencias Sociales</option>
+                            <option value="Ciencias Naturales">Ciencias Naturales</option>
+                            <option value="Inglés">Inglés</option>
+                            <option value="Educación Física">Educación Física y Salud</option>
+                            <option value="Artes Visuales">Artes Visuales</option>
+                            <option value="Música">Música</option>
+                            <option value="Tecnología">Tecnología</option>
+                            <option value="Religión">Religión</option>
+                            <option value="Otra">Otra (Especificar...)</option>
+                        </select>
+                    </div>
+
+                    <div id="otra-subject-container" style="display: none; text-align: left; margin-bottom: 1.5rem;">
+                        <label for="subject-otra-input" style="font-size: 0.85rem; font-weight: 600; color: var(--text-main); display: block; margin-bottom: 0.5rem;">Especifique Asignatura</label>
+                        <input type="text" id="subject-otra-input" class="form-control" placeholder="Ej. Filosofía" style="width: 100%; font-size: 1rem; padding: 0.75rem 1rem;">
+                    </div>
+
+                    <button class="btn btn-primary" id="btn-start-evaluation" style="width: 100%; padding: 0.85rem; font-size: 1rem; border-radius: 9999px;">
+                        Comenzar Evaluación
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 0.5rem;"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                    </button>
+                </div>
+            </section>
+
+            <!-- VISTA 2: CREADOR DE EVALUACIONES -->
+            <section class="creator-section" id="creator-view" style="display: none;">
+                <div class="creator-header">
+                    <button class="btn btn-secondary" id="btn-volver">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                        Volver al Dashboard
+                    </button>
+                    <span class="badge" id="selected-subject-badge">Asignatura</span>
+                </div>
+
+                <div class="creator-workspace">
+                    <!-- Panel Formulario (Izquierda) -->
+                    <div class="creator-form-panel">
+                        <h3>Configurar Instrumento</h3>
+                        
+                        <!-- Datos Institucionales -->
+                        <div class="form-group-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                            <div class="form-group">
+                                <label for="eval-docente">Nombre del Docente</label>
+                                <input type="text" id="eval-docente" class="form-control" placeholder="Ej. Prof. Juan Pérez">
+                            </div>
+                            <div class="form-group">
+                                <label for="eval-depto">Departamento</label>
+                                <input type="text" id="eval-depto" class="form-control" placeholder="Ej. Depto. de Ciencias">
+                            </div>
+                        </div>
+                        <div class="form-group-row" style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 0.5rem;">
+                            <div class="form-group">
+                                <label for="eval-institucion">Establecimiento / Institución</label>
+                                <input type="text" id="eval-institucion" class="form-control" placeholder="Ej. Colegio Horizonte">
+                            </div>
+                            <div class="form-group">
+                                <label>Insignia Colegio</label>
+                                <div class="image-upload-box" style="min-height: 38px; padding: 0.25rem;">
+                                    <span id="badge-insignia-label" style="font-size: 0.7rem;">Subir Insignia</span>
+                                    <input type="file" id="img-insignia" accept="image/*" class="file-input">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group-row" style="display: grid; grid-template-columns: 1fr; gap: 0.5rem;">
+                            <div class="form-group">
+                                <label for="eval-unit">Unidad a Evaluar</label>
+                                <input type="text" id="eval-unit" class="form-control" placeholder="Ej. Unidad 1: La Revolución Industrial y sus impactos">
+                            </div>
+                        </div>
+                        <div class="form-group-row" style="display: grid; grid-template-columns: 1fr; gap: 0.5rem;">
+                            <div class="form-group">
+                                <label for="eval-objectives">Objetivos y/o Contenidos de Aprendizaje</label>
+                                <textarea id="eval-objectives" class="form-control" rows="2" placeholder="Ej. OA 5: Explicar el proceso de industrialización y sus consecuencias..." style="resize: none; font-size: 0.8rem;"></textarea>
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-top: 0.25rem; display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem;">
+                            <input type="checkbox" id="eval-include-autoeval" checked style="width: auto; height: auto; cursor: pointer;">
+                            <label for="eval-include-autoeval" style="font-weight: 600; cursor: pointer; color: var(--text-main); margin-bottom: 0;">Incluir cuestionario de autoevaluación al final</label>
+                        </div>
+
+                        <div class="form-group-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                            <div class="form-group">
+                                <label for="eval-level">Curso / Nivel</label>
+                                <select id="eval-level" class="form-control">
+                                    <option value="1° básico">1° básico</option>
+                                    <option value="2° básico">2° básico</option>
+                                    <option value="3° básico">3° básico</option>
+                                    <option value="4° básico">4° básico</option>
+                                    <option value="5° básico">5° básico</option>
+                                    <option value="6° básico">6° básico</option>
+                                    <option value="7° básico">7° básico</option>
+                                    <option value="8° básico">8° básico</option>
+                                    <option value="1° medio">1° medio</option>
+                                    <option value="2° medio">2° medio</option>
+                                    <option value="3° medio">3° medio</option>
+                                    <option value="4° medio">4° medio</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="eval-activity">Actividad a Evaluar</label>
+                                <select id="eval-activity" class="form-control">
+                                    <option value="prueba_sumativa">Prueba Sumativa (Escrita)</option>
+                                    <option value="investigacion">Trabajo de Investigación</option>
+                                    <option value="disertacion">Disertación</option>
+                                    <option value="video">Creación de Video</option>
+                                    <option value="maqueta">Maqueta / Proyecto Físico</option>
+                                    <option value="grupal">Trabajo Grupal</option>
+                                    <option value="individual">Trabajo Individual</option>
+                                    <option value="otro">Otro</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="eval-matrix">Instrumento de Evaluación</label>
+                                <select id="eval-matrix" class="form-control">
+                                    <option value="evaluacion_escrita">Evaluación Escrita</option>
+                                    <option value="rubrica" disabled>Rúbrica</option>
+                                    <option value="escala_apreciacion" disabled>Escala de Apreciación</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Sección: Imágenes y Recursos de Apoyo (Opcional) -->
+                        <details class="form-group" style="background-color: rgba(245, 158, 11, 0.03); border: 1px solid var(--border); padding: 0.85rem; border-radius: var(--radius-md); margin-bottom: 0.75rem;">
+                            <summary style="cursor: pointer; font-weight: bold; color: var(--accent); display: flex; align-items: center; gap: 0.35rem; font-size: 0.85rem; outline: none; list-style: none;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                                <strong>Imágenes y Recursos de Apoyo (Opcional)</strong>
+                                <span style="font-size: 0.7rem; font-weight: normal; color: var(--text-muted); margin-left: auto;">▼ Expandir</span>
+                            </summary>
+                            <div style="margin-top: 0.75rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                                <span style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.4;">
+                                    Carga recursos visuales que se incorporarán a la evaluación y se previsualizarán antes de las preguntas (mapas, gráficos, fuentes, etc.).
+                                </span>
+                                
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.75rem;">
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label style="font-size: 0.7rem; font-weight: 600; margin-bottom: 0.25rem;">Imagen Principal / Cabecera</label>
+                                        <div class="image-upload-box" style="min-height: 38px; padding: 0.25rem;">
+                                            <span id="label-img-principal" style="font-size: 0.65rem;">Subir Imagen</span>
+                                            <input type="file" id="img-principal" accept="image/*" class="file-input">
+                                        </div>
+                                    </div>
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label style="font-size: 0.7rem; font-weight: 600; margin-bottom: 0.25rem;">Apoyo Visual General</label>
+                                        <div class="image-upload-box" style="min-height: 38px; padding: 0.25rem;">
+                                            <span id="label-img-apoyo-gen" style="font-size: 0.65rem;">Subir Imagen</span>
+                                            <input type="file" id="img-apoyo-gen" accept="image/*" class="file-input">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.75rem;">
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label style="font-size: 0.7rem; font-weight: 600; margin-bottom: 0.25rem;">Recurso 1 (Ej. Mapa/Texto)</label>
+                                        <div class="image-upload-box" style="min-height: 38px; padding: 0.25rem;">
+                                            <span id="label-img-recurso1" style="font-size: 0.65rem;">Subir Imagen</span>
+                                            <input type="file" id="img-recurso1" accept="image/*" class="file-input">
+                                        </div>
+                                    </div>
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label style="font-size: 0.7rem; font-weight: 600; margin-bottom: 0.25rem;">Recurso 2 (Ej. Esquema)</label>
+                                        <div class="image-upload-box" style="min-height: 38px; padding: 0.25rem;">
+                                            <span id="label-img-recurso2" style="font-size: 0.65rem;">Subir Imagen</span>
+                                            <input type="file" id="img-recurso2" accept="image/*" class="file-input">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.75rem;">
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label style="font-size: 0.7rem; font-weight: 600; margin-bottom: 0.25rem;">Recurso 3 (Ej. Fotografía)</label>
+                                        <div class="image-upload-box" style="min-height: 38px; padding: 0.25rem;">
+                                            <span id="label-img-recurso3" style="font-size: 0.65rem;">Subir Imagen</span>
+                                            <input type="file" id="img-recurso3" accept="image/*" class="file-input">
+                                        </div>
+                                    </div>
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label style="font-size: 0.7rem; font-weight: 600; margin-bottom: 0.25rem;">Imagen para Análisis</label>
+                                        <div class="image-upload-box" style="min-height: 38px; padding: 0.25rem;">
+                                            <span id="label-img-analisis" style="font-size: 0.65rem;">Subir Imagen</span>
+                                            <input type="file" id="img-analisis" accept="image/*" class="file-input">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: 1fr; gap: 0.5rem; font-size: 0.75rem;">
+                                    <div class="form-group" style="margin-bottom: 0; grid-column: span 2; width: 100%;">
+                                        <label style="font-size: 0.7rem; font-weight: 600; margin-bottom: 0.25rem;">Gráfico o Fuente de Información</label>
+                                        <div class="image-upload-box" style="min-height: 38px; padding: 0.25rem;">
+                                            <span id="label-img-grafico" style="font-size: 0.65rem;">Subir Imagen</span>
+                                            <input type="file" id="img-grafico" accept="image/*" class="file-input">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </details>
+
+                        <!-- Carga de Materia para IA con Configuración Fina de Cantidades -->
+                        <div class="form-group" style="background-color: rgba(99, 102, 241, 0.05); border: 1px solid var(--border); padding: 0.85rem; border-radius: var(--radius-md); margin-bottom: 0.5rem;">
+                            <label style="color: #a5b4fc; display: flex; align-items: center; gap: 0.35rem;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                                <strong>Materia a Evaluar (PDF, Word, TXT)</strong>
+                            </label>
+                            <input type="file" id="materia-upload" accept=".pdf,.docx,.txt" class="form-control" style="font-size: 0.75rem; margin-top: 0.25rem;">
+                            
+                            <!-- Panel Detallado de Cantidades (Solo para Evaluación Escrita) -->
+                            <div id="panel-cantidades" style="margin-top: 0.6rem; display: flex; flex-direction: column; gap: 0.35rem;">
+                                <span style="font-size: 0.75rem; font-weight: 600; color: #a5b4fc;">Definir ítems para generar con IA:</span>
+                                <div class="quantity-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; font-size: 0.7rem; margin-top: 0.15rem;">
+                                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.15rem; background-color: var(--background); padding: 0.25rem; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+                                        <span>Abiertas:</span>
+                                        <input type="number" id="cnt-abierta" class="form-control" value="2" min="0" max="10" style="padding: 0.1rem 0.25rem; width: 34px; text-align: center; height: 22px; min-height: auto; font-size: 0.7rem;">
+                                    </div>
+                                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.15rem; background-color: var(--background); padding: 0.25rem; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+                                        <span>Alternat:</span>
+                                        <input type="number" id="cnt-alternativas" class="form-control" value="2" min="0" max="10" style="padding: 0.1rem 0.25rem; width: 34px; text-align: center; height: 22px; min-height: auto; font-size: 0.7rem;">
+                                    </div>
+                                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.15rem; background-color: var(--background); padding: 0.25rem; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+                                        <span>V/F:</span>
+                                        <input type="number" id="cnt-vf" class="form-control" value="2" min="0" max="10" style="padding: 0.1rem 0.25rem; width: 34px; text-align: center; height: 22px; min-height: auto; font-size: 0.7rem;">
+                                    </div>
+                                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.15rem; background-color: var(--background); padding: 0.25rem; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+                                        <span>Pareados:</span>
+                                        <input type="number" id="cnt-pareados" class="form-control" value="1" min="0" max="10" style="padding: 0.1rem 0.25rem; width: 34px; text-align: center; height: 22px; min-height: auto; font-size: 0.7rem;">
+                                    </div>
+                                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.15rem; background-color: var(--background); padding: 0.25rem; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+                                        <span>Complet:</span>
+                                        <input type="number" id="cnt-completacion" class="form-control" value="1" min="0" max="10" style="padding: 0.1rem 0.25rem; width: 34px; text-align: center; height: 22px; min-height: auto; font-size: 0.7rem;">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Panel de Configuración de Rúbrica/Escala (Oculto por defecto) -->
+                            <div id="panel-rubrica" style="margin-top: 0.6rem; display: none; flex-direction: column; gap: 0.4rem;">
+                                <span style="font-size: 0.75rem; font-weight: 600; color: #a5b4fc;">Configuración del Instrumento:</span>
+                                <div style="display: flex; flex-direction: column; gap: 0.2rem;">
+                                    <label for="rubric-type" style="font-size: 0.7rem; color: var(--text-muted);">Tipo de Rúbrica:</label>
+                                    <select id="rubric-type" class="form-control" style="font-size: 0.75rem; padding: 0.3rem;">
+                                        <option value="analitica">Analítica (Desglosada por criterios)</option>
+                                        <option value="holistica">Holística (Evaluación global)</option>
+                                    </select>
+                                </div>
+                                <div style="display: flex; flex-direction: column; gap: 0.2rem;">
+                                    <label for="rubric-levels" style="font-size: 0.7rem; color: var(--text-muted);">Niveles de desempeño:</label>
+                                    <input type="text" id="rubric-levels" class="form-control" value="Excelente, Bueno, En proceso, Insuficiente" style="font-size: 0.75rem; padding: 0.3rem;">
+                                </div>
+                                <div style="display: flex; flex-direction: column; gap: 0.2rem;">
+                                    <label for="rubric-criteria" style="font-size: 0.7rem; color: var(--text-muted);">Criterios Clave a Evaluar (Opcional):</label>
+                                    <textarea id="rubric-criteria" class="form-control" rows="2" placeholder="Ej. Claridad, contenido, ortografía, creatividad..." style="font-size: 0.75rem; width: 100%; resize: none; padding: 0.3rem;"></textarea>
+                                </div>
+                            </div>
+
+                            <!-- Instrucciones Generales para la IA -->
+                            <div style="margin-top: 0.6rem;">
+                                <label for="ia-instruction-general" style="font-size: 0.7rem; color: var(--text-muted); font-weight: 500;">Enfoque o instrucciones generales de contenido para la IA (Opcional):</label>
+                                <textarea id="ia-instruction-general" class="form-control" rows="2" placeholder="Ej. Enfocarse únicamente en las causas y consecuencias de la Primera Guerra Mundial..." style="font-size: 0.75rem; width: 100%; min-height: auto; resize: none; margin-top: 0.15rem; padding: 0.35rem 0.5rem; line-height: 1.3;"></textarea>
+                            </div>
+                            
+                            <div style="margin-top: 0.6rem;">
+                                <button class="btn btn-primary" id="btn-generate-ia" style="width: 100%; padding: 0.45rem; font-size: 0.75rem; height: 34px;">
+                                    ✨ Generar Preguntas con IA
+                                </button>
+                            </div>
+                            
+                            <!-- Spinner de carga -->
+                            <div id="ia-loading-spinner" style="display: none; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 0.5rem; font-size: 0.75rem; color: var(--accent);">
+                                <div class="spinner-circle"></div>
+                                <span>IA Procesando materia...</span>
+                            </div>
+                        </div>
+
+                        <!-- Sección de Preguntas -->
+                        <div class="form-group">
+                            <label>Preguntas / Ítems de la Evaluación</label>
+                            <div id="questions-list" class="questions-list">
+                                <!-- Preguntas dinámicas -->
+                            </div>
+                            <button class="btn btn-secondary" id="btn-add-question" style="margin-top: 0.5rem; width: 100%; font-size: 0.8rem; padding: 0.65rem;">
+                                ✍️ Crear Pregunta Personal (Sin IA)
+                            </button>
+                        </div>
+
+                        <button class="btn btn-accent" id="btn-generate" style="width: 100%; margin-top: 1rem;">
+                            Generar Evaluación (Word)
+                        </button>
+                    </div>
+
+                    <!-- Panel de Previsualización (Derecha) -->
+                    <div class="creator-preview-panel">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem; flex-wrap: wrap; gap: 0.5rem;">
+                            <h3 style="margin: 0;">Vista Previa A4</h3>
+                            <div class="preview-tabs">
+                                <button class="preview-tab active" id="tab-student" data-view="student">Vista Estudiante</button>
+                                <button class="preview-tab" id="tab-teacher" data-view="teacher">Pauta de Corrección</button>
+                            </div>
+                        </div>
+                        <div class="a4-container" id="a4-preview">
+                            <div class="a4-header">
+                                <div class="school-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000000; padding-bottom: 0.5rem; min-height: 70px;">
+                                    <div class="logo-placeholder" id="preview-logo-placeholder" style="width: 60px; height: 60px; border: 1px dashed #666666; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; color: #666666; text-align: center; border-radius: 4px; overflow: hidden; position: relative;">
+                                        <img id="preview-insignia-img" style="display: none; width: 100%; height: 100%; object-fit: contain;">
+                                        <span id="preview-insignia-text">[Insignia]</span>
+                                    </div>
+                                    <div class="school-info" style="text-align: right; display: flex; flex-direction: column; gap: 0.15rem; font-size: 0.65rem;">
+                                        <p><strong>Establecimiento:</strong> <span id="preview-school-name">_________________</span></p>
+                                        <p><strong>Docente:</strong> <span id="preview-teacher-name">_________________</span></p>
+                                        <p><strong>Departamento:</strong> <span id="preview-dept-name">_________________</span></p>
+                                    </div>
+                                </div>
+                                <div class="evaluation-title" style="text-align: center; margin-top: 0.5rem;">
+                                    <h2 id="preview-title" style="font-size: 1.1rem; font-weight: 700; color: #000;">Evaluación de Historia</h2>
+                                    <p><strong id="preview-level-badge" style="font-size: 0.7rem; color: #000;">Nivel: 1° Básico</strong></p>
+                                </div>
+                                <div class="evaluation-metadata" style="margin-top: 0.35rem; font-size: 0.65rem; border: 1px solid #000000; padding: 0.4rem 0.6rem; border-radius: 4px; background-color: #fafafa; margin-bottom: 0.5rem; text-align: left; display: flex; flex-direction: column; gap: 0.2rem;">
+                                    <p style="margin: 0;"><strong>Unidad:</strong> <span id="preview-unit">_________________________________</span></p>
+                                    <p style="margin: 0; margin-top: 0.15rem;"><strong>Objetivos / Contenidos:</strong> <span id="preview-objectives">_________________________________</span></p>
+                                </div>
+                            </div>
+
+                            <div class="a4-student-info">
+                                <p><strong>Nombre del Estudiante:</strong> ___________________________________________</p>
+                                <p><strong>Fecha:</strong> ____/____/2026 &nbsp;&nbsp;&nbsp;&nbsp; <strong>Puntaje:</strong> ____ / <span id="preview-total-points">0</span> pts</p>
+                            </div>
+
+                            <div class="a4-content">
+                                <div id="preview-questions" class="preview-questions">
+                                    <p class="empty-questions-notice">Aún no has cargado materia para generar preguntas. Sube un archivo arriba y presiona "Generar Preguntas con IA".</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

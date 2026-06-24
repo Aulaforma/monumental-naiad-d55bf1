@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Aula Forma | Panel de Usuario</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { display: block; overflow: auto; height: auto; background-color: #f8fafc; margin: 0; font-family: var(--font-family); }
+        .topbar { background: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+        .topbar-logo { display: flex; align-items: center; gap: 0.75rem; text-decoration: none; color: var(--text-main); font-weight: bold; font-size: 1.25rem; }
+        .topbar-nav { display: flex; gap: 1rem; align-items: center; }
+        .container { max-width: 1000px; margin: 2rem auto; padding: 0 1.5rem; display: grid; grid-template-columns: 1fr 2fr; gap: 2rem; }
+        .card { background: white; border-radius: var(--radius-xl); box-shadow: var(--shadow-sm); padding: 2rem; border: 1px solid var(--border); }
+        .profile-card { text-align: center; }
+        .profile-avatar { width: 80px; height: 80px; background: linear-gradient(135deg, #5c60f5, #7f56d9); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; font-weight: bold; margin: 0 auto 1rem auto; }
+        .profile-name { font-size: 1.5rem; color: var(--text-main); margin-bottom: 0.25rem; }
+        .profile-email { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+        .stats-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius-md); padding: 1.5rem; margin-bottom: 1.5rem; }
+        .stats-value { font-size: 2.5rem; font-weight: 800; color: var(--primary); margin-bottom: 0.25rem; }
+        .stats-label { color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+        
+        .history-list { list-style: none; padding: 0; margin: 0; }
+        .history-item { padding: 1rem 0; border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center; }
+        .history-item:last-child { border-bottom: none; }
+        .history-title { font-weight: 600; color: var(--text-main); margin-bottom: 0.25rem; }
+        .history-meta { font-size: 0.85rem; color: var(--text-muted); }
+        .badge { display: inline-block; padding: 0.25rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+        .badge-credits { background: #e0e7ff; color: #4f46e5; }
+        
+        .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text-muted); }
+        .empty-icon { opacity: 0.5; margin-bottom: 1rem; }
+        
+        @media (max-width: 768px) {
+            .container { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <a href="index.html" class="topbar-logo">
+            <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #5c60f5, #7f56d9); border-radius: 6px; display: flex; align-items: center; justify-content: center;">
+                <svg viewBox="0 0 24 24" width="18" height="18" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/><path d="M12 7v14M9 11l3 3 6-6"/></svg>
+            </div>
+            Aula Forma
+        </a>
+        <div class="topbar-nav">
+            <a href="dashboard.html" class="btn btn-primary" style="padding: 0.5rem 1rem; border-radius: 9999px; font-size: 0.9rem;">Generador</a>
+            <button id="btn-logout" class="btn btn-outline" style="padding: 0.5rem 1rem; border-radius: 9999px; font-size: 0.9rem;">Cerrar Sesión</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Sidebar Perfil -->
+        <aside>
+            <div class="card profile-card">
+                <div class="profile-avatar" id="user-initial">U</div>
+                <h2 class="profile-name" id="user-name">Cargando...</h2>
+                <p class="profile-email" id="user-email">cargando@correo.com</p>
+                
+                <div class="stats-box">
+                    <div class="stats-value" id="user-credits">0</div>
+                    <div class="stats-label">Créditos Disponibles</div>
+                </div>
+
+                <div style="margin-bottom: 1.5rem; text-align: left; font-size: 0.9rem; color: var(--text-muted);">
+                    <strong>Pack Activo:</strong> <span id="user-pack">Cargando...</span>
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    <a href="dashboard.html" class="btn btn-primary" style="width: 100%; border-radius: 9999px; justify-content: center;">Generar nuevo documento</a>
+                    <a href="precios.html" class="btn btn-outline" style="width: 100%; border-radius: 9999px; justify-content: center;">Comprar créditos</a>
+                </div>
+            </div>
+            
+            <div id="admin-panel-link" style="margin-top: 1rem; display: none; text-align: center;">
+                <a href="admin.html" class="btn btn-outline" style="border-color: #ef4444; color: #ef4444;">Ir al Panel Admin</a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main>
+            <div class="card">
+                <h2 style="margin-top: 0; color: var(--text-main); font-size: 1.25rem; border-bottom: 1px solid var(--border-light); padding-bottom: 1rem; margin-bottom: 1rem;">Historial de Documentos</h2>
+                
+                <div id="history-container">
+                    <!-- Loaded dynamically -->
+                    <div class="empty-state">
+                        <svg class="empty-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                        <p>Aún no has generado ningún documento.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/supabase-client.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const session = await getCurrentSession();
+            
+            if (!session) {
+                window.location.href = 'auth.html';
+                return;
+            }
+
+            // Detectar si venimos de un pago exitoso
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('status') === 'success') {
+                const banner = document.createElement('div');
+                banner.style.padding = '1rem';
+                banner.style.background = '#f0fdf4';
+                banner.style.color = '#15803d';
+                banner.style.border = '1px solid #bbf7d0';
+                banner.style.borderRadius = 'var(--radius-md)';
+                banner.style.marginBottom = '1.5rem';
+                banner.style.textAlign = 'center';
+                banner.style.fontWeight = '600';
+                banner.textContent = '¡Pago aprobado con éxito! Tus créditos han sido cargados a tu cuenta.';
+                document.querySelector('.container').prepend(banner);
+            }
+
+            // Load profile data
+            const { data: profile, error } = await supabase
+                .from('perfiles')
+                .select('*')
+                .eq('id', session.user.id)
+                .single();
+
+            if (profile) {
+                document.getElementById('user-name').textContent = profile.nombre_completo || 'Usuario';
+                document.getElementById('user-email').textContent = profile.correo;
+                document.getElementById('user-credits').textContent = profile.creditos_disponibles;
+                document.getElementById('user-initial').textContent = (profile.nombre_completo || 'U').charAt(0).toUpperCase();
+                
+                if (profile.is_admin) {
+                    document.getElementById('admin-panel-link').style.display = 'block';
+                }
+
+                // Determinar pack activo (esto podría venir de la BD también)
+                if (profile.prueba_gratuita_usada && profile.creditos_disponibles <= 1) {
+                    document.getElementById('user-pack').textContent = "Prueba Gratuita";
+                } else if (profile.creditos_disponibles > 1) {
+                    document.getElementById('user-pack').textContent = "Pack Comprado";
+                } else {
+                    document.getElementById('user-pack').textContent = "Sin créditos";
+                }
+            }
+
+            // Load history
+            const { data: history, error: errHist } = await supabase
+                .from('documentos_generados')
+                .select('*')
+                .eq('id_usuario', session.user.id)
+                .order('fecha_generacion', { ascending: false });
+
+            const historyContainer = document.getElementById('history-container');
+            
+            if (history && history.length > 0) {
+                historyContainer.innerHTML = '<ul class="history-list"></ul>';
+                const ul = historyContainer.querySelector('ul');
+                
+                history.forEach(doc => {
+                    const li = document.createElement('li');
+                    li.className = 'history-item';
+                    
+                    const date = new Date(doc.fecha_generacion).toLocaleDateString('es-CL', {
+                        year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit'
+                    });
+
+                    li.innerHTML = `
+                        <div>
+                            <div class="history-title">${doc.tipo_instrumento} - ${doc.asignatura} (${doc.curso})</div>
+                            <div class="history-meta">${doc.nombre_documento || 'Documento sin título'} • ${date}</div>
+                        </div>
+                        <div>
+                            <span class="badge badge-credits">-${doc.creditos_usados} crédito(s)</span>
+                        </div>
+                    `;
+                    ul.appendChild(li);
+                });
+            }
+
+            // Logout
+            document.getElementById('btn-logout').addEventListener('click', async () => {
+                await supabase.auth.signOut();
+                window.location.href = 'index.html';
+            });
+        });
+    </script>
+</body>
+</html>

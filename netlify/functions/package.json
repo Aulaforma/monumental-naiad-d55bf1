@@ -1,0 +1,6 @@
+{
+  "name": "netlify-functions",
+  "version": "1.0.0",
+  "description": "Netlify serverless functions (no external dependencies)",
+  "dependencies": {}
+}
