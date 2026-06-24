@@ -122,11 +122,7 @@
             }
 
             // Load profile data
-            const { data: profile, error } = await supabase
-                .from('perfiles')
-                .select('*')
-                .eq('id', session.user.id)
-                .single();
+            const { profile, error } = await getOrCreateProfile(session);
 
             if (profile) {
                 document.getElementById('user-name').textContent = profile.nombre_completo || 'Usuario';
@@ -146,6 +142,31 @@
                 } else {
                     document.getElementById('user-pack').textContent = "Sin créditos";
                 }
+            } else {
+                console.error("Error al obtener o crear el perfil de Supabase:", error);
+                document.getElementById('user-name').textContent = 'Error al cargar';
+                document.getElementById('user-email').textContent = session.user.email;
+                document.getElementById('user-pack').textContent = 'Error de base de datos';
+                
+                // Mostrar un mensaje explicativo detallado
+                const errorDiv = document.createElement('div');
+                errorDiv.style.marginTop = '1.5rem';
+                errorDiv.style.padding = '1rem';
+                errorDiv.style.background = '#fef2f2';
+                errorDiv.style.color = '#ef4444';
+                errorDiv.style.border = '1px solid #fca5a5';
+                errorDiv.style.borderRadius = 'var(--radius-md)';
+                errorDiv.style.fontSize = '0.85rem';
+                errorDiv.style.textAlign = 'left';
+                errorDiv.style.lineHeight = '1.4';
+                
+                if (error && (error.message?.includes('relation') || error.message?.includes('does not exist'))) {
+                    errorDiv.innerHTML = `<strong>¡Tablas faltantes en la Base de Datos!</strong><br><br>No se encuentra la tabla <code>perfiles</code> en tu instancia de Supabase.<br><br><strong>Solución:</strong> Copia el contenido del archivo <code>sql/schema.sql</code> y ejecútalo en la pestaña "SQL Editor" de tu panel de control de Supabase.`;
+                } else {
+                    errorDiv.innerHTML = `<strong>Error de conexión o permisos:</strong><br>${error?.message || 'No se pudo comunicar con Supabase.'}<br><br><strong>Detalle:</strong> Si ya creaste las tablas, verifica que no hayas olvidado aplicar las políticas RLS o que no haya un problema con tus credenciales de Supabase en <code>js/supabase-client.js</code>.`;
+                }
+                
+                document.querySelector('.profile-card').appendChild(errorDiv);
             }
 
             // Load history

@@ -474,8 +474,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         // Nota: El costo exacto se validará mejor en el backend según la complejidad.
 
-        const { data: profile } = await supabase.from('perfiles').select('creditos_disponibles').eq('id', session.user.id).single();
-        if (!profile || profile.creditos_disponibles < cost) {
+        const { profile, error } = await getOrCreateProfile(session);
+        if (!profile) {
+            console.error("Error al obtener o crear perfil:", error);
+            alert('No se pudo cargar tu información de perfil. Si eres el administrador, por favor verifica que hayas ejecutado el archivo sql/schema.sql en tu panel de Supabase.');
+            return;
+        }
+        if (profile.creditos_disponibles < cost) {
             alert('No tienes créditos suficientes. Compra un pack para seguir generando documentos en Word.');
             window.location.href = 'precios.html';
             return;

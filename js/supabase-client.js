@@ -186,12 +186,12 @@ if (isMockMode) {
                 const perfiles = JSON.parse(safeLocalStorage.getItem('db_perfiles') || '[]');
                 filtered = filtered.map(compra => {
                     const perfil = perfiles.find(p => p.id === compra.id_usuario);
-                    let nombrePack = 'Pack Inicial';
+                    let nombrePack = 'Pack Básico';
                     let cantidadCreditos = 10;
-                    if (compra.id_pack === 3) { nombrePack = 'Pack Docente'; cantidadCreditos = 15; }
-                    else if (compra.id_pack === 4) { nombrePack = 'Pack Aula'; cantidadCreditos = 25; }
-                    else if (compra.id_pack === 5) { nombrePack = 'Pack Departamento'; cantidadCreditos = 50; }
-                    else if (compra.id_pack === 6) { nombrePack = 'Pack UTP'; cantidadCreditos = 100; }
+                    if (compra.id_pack === 2) { nombrePack = 'Pack Estándar'; cantidadCreditos = 25; }
+                    else if (compra.id_pack === 3) { nombrePack = 'Pack Plus'; cantidadCreditos = 60; }
+                    else if (compra.id_pack === 4) { nombrePack = 'Pack Premium'; cantidadCreditos = 100; }
+                    else if (compra.id_pack === 5) { nombrePack = 'Pack Institucional'; cantidadCreditos = 300; }
                     
                     return {
                         ...compra,
@@ -331,3 +331,49 @@ supabase.auth.onAuthStateChange((event, session) => {
     const authEvent = new CustomEvent('authStateChange', { detail: { event, session } });
     document.dispatchEvent(authEvent);
 });
+
+// Utility to get or create user profile fallback
+async function getOrCreateProfile(session) {
+    if (!session || !session.user) {
+        return { profile: null, error: new Error("No hay sesión activa.") };
+    }
+    
+    // 1. Intentar obtener el perfil
+    const { data: profile, error } = await supabase
+        .from('perfiles')
+        .select('*')
+        .eq('id', session.user.id)
+        .single();
+        
+    if (profile) {
+        return { profile, error: null };
+    }
+    
+    // Si la tabla no existe o hay otro error grave que no sea "cero filas devueltas" (PGRST116)
+    if (error && error.code !== 'PGRST116') {
+        return { profile: null, error };
+    }
+    
+    // 2. Si el perfil no existe, intentar crearlo (por si falla el trigger o el usuario es previo a la base de datos)
+    console.log("Perfil no encontrado en base de datos. Intentando creación automática vía fallback...");
+    const profileToInsert = {
+        id: session.user.id,
+        correo: session.user.email,
+        nombre_completo: session.user.user_metadata?.nombre_completo || 'Usuario',
+        tipo_usuario: session.user.user_metadata?.tipo_usuario || 'Docente',
+        creditos_disponibles: 1, // crédito gratuito inicial
+        prueba_gratuita_usada: true
+    };
+    
+    const { error: insertError } = await supabase
+        .from('perfiles')
+        .insert(profileToInsert);
+        
+    if (!insertError) {
+        console.log("Perfil creado exitosamente mediante fallback del cliente.");
+        return { profile: profileToInsert, error: null };
+    }
+    
+    // Retornamos el error de la inserción o el error original
+    return { profile: null, error: insertError || error };
+}

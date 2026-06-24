@@ -18,11 +18,7 @@
                 }
                 
                 // Set user initials and name
-                const { data: profile, error } = await supabase
-                    .from('perfiles')
-                    .select('nombre_completo')
-                    .eq('id', session.user.id)
-                    .single();
+                const { profile, error } = await getOrCreateProfile(session);
                     
                 if (profile && profile.nombre_completo) {
                     document.getElementById('nav-user-name').textContent = profile.nombre_completo;
@@ -30,6 +26,7 @@
                 } else {
                     document.getElementById('nav-user-name').textContent = 'Mi Perfil';
                     document.getElementById('nav-user-initial').textContent = 'U';
+                    if (error) console.error("Error al obtener o crear perfil en dashboard:", error);
                 }
             } catch (err) {
                 console.error("Dashboard auth check failed:", err);
