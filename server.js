@@ -619,3 +619,5 @@ app.all('/api/mercadopago-webhook', netlifyExpressBridge(webhookHandler));
 app.listen(PORT, () => {
     console.log(`Servidor de desarrollo escuchando en http://localhost:${PORT}`);
 });
+
+module.exports = app;
