@@ -3,8 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AulaForma | Crea Evaluaciones con IA</title>
-    <meta name="description" content="Plataforma educativa para crear evaluaciones, rúbricas y escalas de apreciación al instante con Inteligencia Artificial.">
+    <title>AulaForma | Crea Evaluaciones con IA (100% Online)</title>
+    <meta name="description" content="Plataforma educativa online para crear evaluaciones, rúbricas y escalas de apreciación al instante con Inteligencia Artificial. Prepárate para el futuro móvil.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     <!-- Supabase CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -15,6 +18,8 @@
         body {
             overflow: auto; /* Allow scroll on landing page */
             display: block;
+            background: #f8fafc;
+            font-family: 'Inter', sans-serif;
         }
 
         .landing-container {
@@ -22,20 +27,23 @@
             display: flex;
             flex-direction: column;
             position: relative;
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            overflow: hidden;
         }
 
         .landing-nav {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 1.5rem 4rem;
-            background: rgba(255, 255, 255, 0.4);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+            padding: 1.25rem 4rem;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.4);
             position: sticky;
             top: 0;
             z-index: 100;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03);
         }
 
         .landing-logo {
@@ -46,9 +54,12 @@
         }
 
         .landing-logo h2 {
+            font-family: 'Outfit', sans-serif;
             font-size: 1.5rem;
+            font-weight: 700;
             color: var(--text-main);
             margin: 0;
+            letter-spacing: -0.02em;
         }
 
         .hero-section {
@@ -56,87 +67,123 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 4rem 2rem;
+            padding: 6rem 2rem;
             position: relative;
-            overflow: hidden;
+            z-index: 10;
         }
 
         .hero-content {
-            max-width: 800px;
+            max-width: 900px;
             text-align: center;
             z-index: 10;
-            animation: fadeInUp 1s ease-out forwards;
+            animation: fadeInUp 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .badge-online {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.45rem 1.25rem;
+            background: linear-gradient(135deg, rgba(92, 96, 245, 0.08) 0%, rgba(16, 185, 129, 0.08) 100%);
+            color: var(--primary);
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(92, 96, 245, 0.25);
+            box-shadow: 0 4px 20px rgba(92, 96, 245, 0.06);
         }
 
         .hero-title {
-            font-size: 3.5rem;
+            font-family: 'Outfit', sans-serif;
+            font-size: 3.75rem;
             font-weight: 800;
             color: var(--text-main);
-            line-height: 1.2;
+            line-height: 1.15;
             margin-bottom: 1.5rem;
-            background: linear-gradient(to right, #4f46e5, #ec4899, #8b5cf6, #4f46e5);
+            letter-spacing: -0.03em;
+            background: linear-gradient(to right, #4f46e5 0%, #ec4899 35%, #8b5cf6 70%, #4f46e5 100%);
             background-size: 200% auto;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            animation: glowText 4s linear infinite;
+            animation: glowText 5s linear infinite;
         }
 
         .hero-subtitle {
             font-size: 1.25rem;
             color: var(--text-muted);
             margin-bottom: 2.5rem;
-            line-height: 1.6;
+            line-height: 1.65;
+            max-width: 720px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .hero-actions {
             display: flex;
-            gap: 1rem;
+            gap: 1.25rem;
             justify-content: center;
+            align-items: center;
         }
 
         .btn-large {
-            padding: 0.875rem 2rem;
-            font-size: 1.1rem;
+            padding: 0.875rem 2.25rem;
+            font-size: 1.05rem;
             border-radius: 9999px;
             font-weight: 600;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
             text-decoration: none;
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
+            box-shadow: 0 10px 25px rgba(92, 96, 245, 0.15);
         }
 
         .btn-large:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(92, 96, 245, 0.3);
+            box-shadow: 0 15px 30px rgba(92, 96, 245, 0.25);
+        }
+
+        .btn-secondary-large {
+            background: rgba(255, 255, 255, 0.8);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+        }
+
+        .btn-secondary-large:hover {
+            background: #ffffff;
+            border-color: #cbd5e1;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.05);
         }
 
         .features-section {
-            padding: 5rem 4rem;
-            background-color: transparent;
+            padding: 4rem 4rem 6rem 4rem;
             position: relative;
             z-index: 10;
         }
 
         .features-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2.5rem;
             max-width: 1200px;
             margin: 0 auto;
         }
 
         .feature-card {
-            background: rgba(255, 255, 255, 0.6);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
             border-radius: var(--radius-xl);
-            padding: 2.5rem;
+            padding: 2.75rem 2.25rem;
             text-align: center;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
             animation: fadeInUp 1s ease-out forwards;
             opacity: 0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.02);
         }
         
         .feature-card:nth-child(1) { animation-delay: 0.2s; }
@@ -144,26 +191,34 @@
         .feature-card:nth-child(3) { animation-delay: 0.6s; }
 
         .feature-card:hover {
-            transform: translateY(-8px) scale(1.02);
-            box-shadow: 0 20px 40px rgba(92, 96, 245, 0.15);
+            transform: translateY(-8px);
+            box-shadow: 0 25px 50px rgba(92, 96, 245, 0.12);
             border-color: rgba(92, 96, 245, 0.3);
-            background: rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.85);
         }
 
         .feature-icon {
-            width: 64px;
-            height: 64px;
-            background: linear-gradient(135deg, rgba(92, 96, 245, 0.1), rgba(127, 86, 217, 0.1));
+            width: 68px;
+            height: 68px;
+            background: linear-gradient(135deg, rgba(92, 96, 245, 0.08), rgba(127, 86, 217, 0.08));
             color: var(--primary);
-            border-radius: 50%;
+            border-radius: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 1.5rem auto;
+            margin: 0 auto 1.75rem auto;
+            box-shadow: 0 8px 16px rgba(92, 96, 245, 0.05);
+            transition: transform 0.3s ease;
+        }
+
+        .feature-card:hover .feature-icon {
+            transform: scale(1.1) rotate(3deg);
         }
 
         .feature-title {
-            font-size: 1.25rem;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.35rem;
+            font-weight: 700;
             margin-bottom: 1rem;
             color: var(--text-main);
         }
@@ -171,22 +226,252 @@
         .feature-desc {
             color: var(--text-muted);
             font-size: 0.95rem;
-            line-height: 1.5;
+            line-height: 1.6;
+        }
+
+        /* App Teaser Section */
+        .app-teaser-section {
+            padding: 6rem 4rem;
+            background: linear-gradient(180deg, transparent 0%, rgba(92, 96, 245, 0.03) 100%);
+            border-top: 1px solid rgba(255, 255, 255, 0.4);
+            position: relative;
+            z-index: 10;
+        }
+
+        .app-teaser-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 5rem;
+            align-items: center;
+        }
+
+        @media (max-width: 968px) {
+            .app-teaser-container {
+                grid-template-columns: 1fr;
+                text-align: center;
+                gap: 4rem;
+            }
+            .mockup-wrapper {
+                margin: 0 auto;
+            }
+        }
+
+        .teaser-content h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.75rem;
+            font-weight: 800;
+            color: var(--text-main);
+            margin-bottom: 1.25rem;
+            line-height: 1.2;
+            letter-spacing: -0.02em;
+        }
+
+        .teaser-content p {
+            color: var(--text-muted);
+            font-size: 1.15rem;
+            line-height: 1.65;
+            margin-bottom: 2rem;
+        }
+
+        .teaser-features {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 2.5rem 0;
+        }
+
+        .teaser-features li {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+            font-size: 1rem;
+            color: var(--text-main);
+            text-align: left;
+        }
+
+        .teaser-features li svg {
+            flex-shrink: 0;
+            margin-top: 0.15rem;
+            color: var(--secondary);
+        }
+
+        .badge-app-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 1rem;
+            background: rgba(245, 158, 11, 0.08);
+            color: #d97706;
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            margin-bottom: 1rem;
+        }
+
+        /* CSS Phone Mockup */
+        .mockup-wrapper {
+            position: relative;
+            width: 300px;
+            height: 600px;
+            background: #0f172a;
+            border-radius: 48px;
+            padding: 12px;
+            box-shadow: 0 30px 70px -15px rgba(15, 23, 42, 0.25), 0 0 0 4px #1e293b, inset 0 4px 6px rgba(255,255,255,0.2);
+            border: 4px solid #334155;
+            animation: floatPhone 6s ease-in-out infinite;
+        }
+
+        @keyframes floatPhone {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-16px) rotate(0.8deg); }
+        }
+
+        .mockup-screen {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%);
+            border-radius: 38px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            flex-direction: column;
+            padding: 2rem 1.25rem;
+        }
+
+        .mockup-camera {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 28px;
+            background: #0f172a;
+            border-bottom-left-radius: 20px;
+            border-bottom-right-radius: 20px;
+            z-index: 20;
+        }
+
+        .mockup-camera::after {
+            content: '';
+            position: absolute;
+            top: 8px;
+            right: 25px;
+            width: 8px;
+            height: 8px;
+            background: #1e293b;
+            border-radius: 50%;
+        }
+
+        .mockup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .mockup-header h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin: 0;
+            color: #0f172a;
+        }
+
+        .mockup-content {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            flex-grow: 1;
+        }
+
+        .mockup-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            border: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            text-align: left;
+        }
+
+        .mockup-card h4 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0;
+        }
+
+        .mockup-card p {
+            font-size: 0.7rem;
+            color: #64748b;
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        .mockup-progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #f1f5f9;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 0.25rem;
+        }
+
+        .mockup-progress-fill {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 3px;
+            width: 70%;
+        }
+
+        .mockup-nav {
+            margin-top: auto;
+            background: white;
+            border-radius: 20px;
+            padding: 0.75rem;
+            display: flex;
+            justify-content: space-around;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+            border: 1px solid #e2e8f0;
+        }
+
+        .mockup-nav-item {
+            width: 24px;
+            height: 24px;
+            background: #f1f5f9;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+        }
+
+        .mockup-nav-item.active {
+            background: rgba(92, 96, 245, 0.1);
+            color: var(--primary);
         }
 
         /* Abstract Background Elements */
         @keyframes float1 {
             0%, 100% { transform: translate(0, 0) scale(1); }
-            33% { transform: translate(30px, -50px) scale(1.1); }
-            66% { transform: translate(-20px, 20px) scale(0.9); }
+            33% { transform: translate(40px, -60px) scale(1.1); }
+            66% { transform: translate(-30px, 30px) scale(0.95); }
         }
         @keyframes float2 {
             0%, 100% { transform: translate(0, 0) scale(1); }
-            33% { transform: translate(-30px, 50px) scale(1.2); }
-            66% { transform: translate(20px, -20px) scale(0.8); }
+            33% { transform: translate(-40px, 60px) scale(1.15); }
+            66% { transform: translate(30px, -30px) scale(0.9); }
         }
         @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(40px); }
+            from { opacity: 0; transform: translateY(35px); }
             to { opacity: 1; transform: translateY(0); }
         }
         @keyframes glowText {
@@ -197,78 +482,80 @@
 
         .bg-shape {
             position: absolute;
-            filter: blur(80px);
+            filter: blur(90px);
             z-index: 1;
-            opacity: 0.7;
+            opacity: 0.6;
         }
 
         .shape-1 {
-            width: 500px;
-            height: 500px;
-            background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
-            top: -100px;
-            right: -100px;
+            width: 600px;
+            height: 600px;
+            background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+            top: -150px;
+            right: -150px;
             border-radius: 50%;
-            animation: float1 15s ease-in-out infinite;
+            animation: float1 18s ease-in-out infinite;
         }
 
         .shape-2 {
-            width: 400px;
-            height: 400px;
-            background: linear-gradient(135deg, #fdf2f8, #fbcfe8);
-            bottom: 10%;
-            left: -100px;
+            width: 500px;
+            height: 500px;
+            background: linear-gradient(135deg, #fdf2f8 0%, #fbcfe8 100%);
+            bottom: 5%;
+            left: -150px;
             border-radius: 50%;
-            animation: float2 18s ease-in-out infinite;
+            animation: float2 20s ease-in-out infinite;
         }
 
         .shape-3 {
-            width: 300px;
-            height: 300px;
-            background: linear-gradient(135deg, #e0f2fe, #bae6fd);
-            top: 40%;
-            right: 10%;
+            width: 400px;
+            height: 400px;
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+            top: 35%;
+            right: 5%;
             border-radius: 50%;
-            animation: float1 20s ease-in-out infinite reverse;
+            animation: float1 22s ease-in-out infinite reverse;
         }
 
         @media (max-width: 768px) {
             .landing-nav { padding: 1rem 2rem; }
-            .hero-title { font-size: 2.5rem; }
-            .features-section { padding: 3rem 2rem; }
+            .hero-title { font-size: 2.75rem; }
+            .features-section { padding: 3rem 1.5rem 5rem 1.5rem; }
+            .app-teaser-section { padding: 4rem 1.5rem; }
         }
     </style>
 </head>
 <body>
 
-    <div class="landing-container" style="background-color: #fafafa; overflow: hidden; position: relative;">
-        <!-- Abstract Background -->
+    <div class="landing-container">
+        <!-- Abstract Background Shapes -->
         <div class="bg-shape shape-1"></div>
         <div class="bg-shape shape-2"></div>
         <div class="bg-shape shape-3"></div>
 
-        <!-- Navigation -->
+        <!-- Navigation Bar -->
         <nav class="landing-nav">
-            <a href="/" class="landing-logo">
-                <div class="logo-icon-box" style="width: 32px; height: 32px;">
+            <a href="index.html" class="landing-logo">
+                <div class="logo-icon-box" style="width: 32px; height: 32px; background: linear-gradient(135deg, var(--primary), #7f56d9); display: flex; align-items: center; justify-content: center; border-radius: 8px;">
                     <svg viewBox="0 0 24 24" width="18" height="18" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/><path d="M12 7v14M9 11l3 3 6-6"/></svg>
                 </div>
                 <h2>AulaForma</h2>
             </a>
             <div>
-                <a href="auth.html" class="btn btn-primary btn-large" style="padding: 0.5rem 1.5rem; font-size: 0.95rem;">Ingresar</a>
+                <a href="auth.html" class="btn btn-primary btn-large" style="padding: 0.55rem 1.75rem; font-size: 0.95rem; box-shadow: none;">Ingresar</a>
             </div>
         </nav>
 
         <!-- Hero Section -->
         <main class="hero-section">
             <div class="hero-content">
-                <div style="display: inline-block; padding: 0.35rem 1rem; background-color: rgba(92, 96, 245, 0.1); color: var(--primary); border-radius: 9999px; font-weight: 600; font-size: 0.85rem; margin-bottom: 1.5rem; border: 1px solid rgba(92, 96, 245, 0.2);">
-                    ✨ Impulsado por Inteligencia Artificial
+                <div class="badge-online">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                    💻 Plataforma 100% Online
                 </div>
-                <h1 class="hero-title">Revoluciona tu enseñanza. Crea evaluaciones en segundos.</h1>
+                <h1 class="hero-title">Revoluciona tu enseñanza.<br>Crea evaluaciones en segundos.</h1>
                 <p class="hero-subtitle">
-                    Sube tus apuntes, selecciona el curso y deja que AulaForma genere pruebas escritas, rúbricas y escalas de apreciación automáticamente. Ahorra horas de trabajo y concéntrate en lo que más importa: tus estudiantes.
+                    AulaForma es una herramienta web completamente online. Sube tu materia o apuntes, selecciona el curso y la IA generará tus pruebas escritas, rúbricas y escalas de apreciación al instante. Accede desde cualquier navegador web sin instalaciones.
                 </p>
                 <div class="hero-actions">
                     <a href="dashboard.html" class="btn btn-primary btn-large">
@@ -287,34 +574,112 @@
                         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                     </div>
                     <h3 class="feature-title">Pruebas Automáticas</h3>
-                    <p class="feature-desc">Genera preguntas de alternativas, verdadero o falso, completación y desarrollo al instante a partir de tus documentos PDF o Word.</p>
+                    <p class="feature-desc">Genera preguntas de alternativas, verdadero o falso, completación y desarrollo en segundos a partir de tus documentos cargados en línea.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
                         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
                     </div>
-                    <h3 class="feature-title">Rúbricas Analíticas</h3>
-                    <p class="feature-desc">Crea rúbricas detalladas u holísticas con niveles de desempeño personalizados para cualquier tipo de actividad en el aula.</p>
+                    <h3 class="feature-title">Rúbricas y Escalas</h3>
+                    <p class="feature-desc">Diseña rúbricas analíticas u holísticas y escalas de apreciación personalizadas en la web para una pauta de corrección exacta.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
                         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                     </div>
                     <h3 class="feature-title">Exportación a Word</h3>
-                    <p class="feature-desc">Previsualiza y ajusta cada detalle en un formato A4 profesional, y descárgalo listo para imprimir o compartir con tus alumnos.</p>
+                    <p class="feature-desc">Previsualiza tus instrumentos educativos antes de descargarlos en formato Word (.doc) 100% editable y listos para imprimir.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- App Teaser Section -->
+        <section class="app-teaser-section">
+            <div class="app-teaser-container">
+                <div class="teaser-content">
+                    <div class="badge-app-status">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                        📱 Próximamente App Móvil
+                    </div>
+                    <h2>Tus evaluaciones,<br>ahora en tu bolsillo.</h2>
+                    <p>
+                        Diseñado para la web hoy, preparado para tu celular mañana. Estamos desarrollando la aplicación oficial de AulaForma para iOS y Android, permitiéndote gestionar tus clases estés donde estés.
+                    </p>
+                    <ul class="teaser-features">
+                        <li>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            <span><strong>Notificaciones instantáneas:</strong> Avisos al instante al aprobar transferencias o al cargar nuevos créditos.</span>
+                        </li>
+                        <li>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            <span><strong>Escaneo Inteligente:</strong> Digitaliza y sube tus rúbricas impresas directamente con la cámara de tu celular.</span>
+                        </li>
+                        <li>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            <span><strong>Visualizador portátil offline:</strong> Lleva tus pautas de evaluación y de autoevaluación descargadas sin internet en la sala de clases.</span>
+                        </li>
+                    </ul>
+                    <div style="font-weight: 500; font-size: 0.9rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem; justify-content: flex-start;">
+                        <span>Disponible muy pronto en las tiendas oficiales:</span>
+                        <span style="font-weight: bold; color: var(--text-main);">App Store</span> y <span style="font-weight: bold; color: var(--text-main);">Google Play</span>
+                    </div>
+                </div>
+                <div class="mockup-wrapper">
+                    <div class="mockup-camera"></div>
+                    <div class="mockup-screen">
+                        <div class="mockup-header">
+                            <svg viewBox="0 0 24 24" width="16" height="16" stroke="var(--primary)" stroke-width="2.5" fill="none"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                            <h3>AulaForma</h3>
+                            <div style="width: 16px; height: 16px; background: #cbd5e1; border-radius: 50%;"></div>
+                        </div>
+                        <div class="mockup-content">
+                            <div class="mockup-card" style="border-left: 4px solid var(--primary);">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                                    <h4>Rúbrica: Exposición</h4>
+                                    <span class="mockup-badge">Listo</span>
+                                </div>
+                                <p>Criterios: Coherencia, Lenguaje formal y Tiempos de entrega.</p>
+                                <div class="mockup-progress-bar">
+                                    <div class="mockup-progress-fill" style="width: 100%; background: var(--secondary);"></div>
+                                </div>
+                            </div>
+                            <div class="mockup-card" style="border-left: 4px solid var(--accent);">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                                    <h4>Prueba: Revolución Industrial</h4>
+                                    <span class="mockup-badge" style="background:#fef3c7; color:#d97706;">Cargando...</span>
+                                </div>
+                                <p>Generando ítems: 2 de Desarrollo, 4 de Selección Múltiple y V/F.</p>
+                                <div class="mockup-progress-bar">
+                                    <div class="mockup-progress-fill"></div>
+                                </div>
+                            </div>
+                            <div class="mockup-card" style="border-left: 4px solid var(--secondary);">
+                                <h4>Créditos Disponibles</h4>
+                                <div style="display: flex; align-items: baseline; gap: 0.25rem; margin-top: 0.25rem;">
+                                    <span style="font-size: 1.25rem; font-weight: bold; color: var(--text-main);">45</span>
+                                    <span style="color: var(--text-muted); font-size: 0.65rem;">créditos de IA</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mockup-nav">
+                            <div class="mockup-nav-item active"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg></div>
+                            <div class="mockup-nav-item"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path></svg></div>
+                            <div class="mockup-nav-item"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
 
         <!-- Footer -->
-        <footer style="background-color: #0f172a; color: #f8fafc; padding: 4rem 2rem 2rem 2rem; margin-top: auto;">
-            <div style="max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem; border-bottom: 1px solid #334155; padding-bottom: 2rem; margin-bottom: 2rem;">
+        <footer style="background-color: #0f172a; color: #f8fafc; padding: 4rem 2rem 2rem 2rem; margin-top: auto; border-top: 1px solid #1e293b;">
+            <div style="max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2.5rem; border-bottom: 1px solid #1e293b; padding-bottom: 2.5rem; margin-bottom: 2rem;">
                 <div>
-                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.25rem;">
                         <div style="width: 24px; height: 24px; background: linear-gradient(135deg, #5c60f5, #7f56d9); border-radius: 4px; display: flex; align-items: center; justify-content: center;">
                             <svg viewBox="0 0 24 24" width="14" height="14" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/><path d="M12 7v14M9 11l3 3 6-6"/></svg>
                         </div>
-                        <h3 style="font-size: 1.25rem; margin: 0;">Aula Forma</h3>
+                        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.25rem; margin: 0; color: white;">Aula Forma</h3>
                     </div>
                     <p style="font-size: 0.85rem; color: #94a3b8; line-height: 1.6; margin-bottom: 0.25rem;">Titular: Sofía Muñoz Vidal</p>
                     <p style="font-size: 0.85rem; color: #94a3b8; line-height: 1.6; margin-bottom: 0.25rem;">RUT: 22.406.864-6</p>
@@ -322,8 +687,8 @@
                     <p style="font-size: 0.85rem; color: #94a3b8; line-height: 1.6;">Contacto: <a href="mailto:aulaforma2026@gmail.com" style="color: #60a5fa; text-decoration: none;">aulaforma2026@gmail.com</a></p>
                 </div>
                 <div>
-                    <h4 style="font-size: 1.1rem; margin-bottom: 1rem;">Legal y Ayuda</h4>
-                    <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem;">
+                    <h4 style="font-family: 'Outfit', sans-serif; font-size: 1.1rem; margin-bottom: 1.25rem; color: white;">Legal y Ayuda</h4>
+                    <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.6rem;">
                         <li><a href="contacto.html" style="color: #94a3b8; text-decoration: none; font-size: 0.9rem; transition: color 0.2s;">Contacto y Soporte</a></li>
                         <li><a href="terminos.html" style="color: #94a3b8; text-decoration: none; font-size: 0.9rem; transition: color 0.2s;">Términos y Condiciones</a></li>
                         <li><a href="privacidad.html" style="color: #94a3b8; text-decoration: none; font-size: 0.9rem; transition: color 0.2s;">Política de Privacidad</a></li>
