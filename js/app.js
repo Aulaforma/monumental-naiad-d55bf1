@@ -1945,4 +1945,38 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
         alert(`¡Documento Word generado con éxito! 
 Se descargará el archivo "${filename}" que podrás abrir y editar directamente en Microsoft Word. Se han incorporado los datos del docente, la insignia, la unidad, los objetivos, la autoevaluación y las respuestas correctas en el documento.`);
     });
+
+    // --- RESPONSIVE SIDEBAR MOBILE TOGGLE ---
+    const sidebarToggle = document.getElementById('sidebar-toggle');
+    const sidebarToggleCreator = document.getElementById('sidebar-toggle-creator');
+    const sidebar = document.querySelector('.sidebar');
+    const sidebarOverlay = document.getElementById('sidebar-overlay');
+
+    function toggleSidebar() {
+        if (sidebar && sidebarOverlay) {
+            sidebar.classList.toggle('active');
+            sidebarOverlay.classList.toggle('active');
+        }
+    }
+
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', toggleSidebar);
+    }
+    if (sidebarToggleCreator) {
+        sidebarToggleCreator.addEventListener('click', toggleSidebar);
+    }
+    if (sidebarOverlay) {
+        sidebarOverlay.addEventListener('click', toggleSidebar);
+    }
+
+    // Close sidebar when clicking any navigation link on mobile
+    const sidebarNavLinks = document.querySelectorAll('.nav-menu .nav-item');
+    sidebarNavLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            if (sidebar && sidebar.classList.contains('active')) {
+                toggleSidebar();
+            }
+        });
+    });
 });
+

@@ -18,6 +18,17 @@ CREATE TABLE perfiles (
     fecha_registro TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
 );
 
+-- Función para verificar si un usuario es administrador de forma segura (evitando recursión RLS)
+CREATE OR REPLACE FUNCTION public.es_admin()
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.perfiles 
+    WHERE id = auth.uid() AND is_admin = TRUE
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 -- Habilitar RLS en perfiles
 ALTER TABLE perfiles ENABLE ROW LEVEL SECURITY;
 
@@ -32,7 +43,7 @@ ON perfiles FOR INSERT WITH CHECK (auth.uid() = id);
 
 CREATE POLICY "Administradores pueden ver y editar todo" 
 ON perfiles FOR ALL USING (
-    EXISTS (SELECT 1 FROM perfiles WHERE id = auth.uid() AND is_admin = TRUE)
+    public.es_admin()
 );
 
 -- Función y Trigger para crear perfil automáticamente cuando un usuario se registra
@@ -95,7 +106,7 @@ ALTER TABLE compras ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Usuarios ven sus compras" ON compras FOR SELECT USING (auth.uid() = id_usuario);
 CREATE POLICY "Usuarios insertan sus compras" ON compras FOR INSERT WITH CHECK (auth.uid() = id_usuario);
 CREATE POLICY "Admins gestionan compras" ON compras FOR ALL USING (
-    EXISTS (SELECT 1 FROM perfiles WHERE id = auth.uid() AND is_admin = TRUE)
+    public.es_admin()
 );
 
 
@@ -130,8 +141,8 @@ CREATE TABLE movimientos_creditos (
 ALTER TABLE movimientos_creditos ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Usuarios pueden ver sus movimientos" ON movimientos_creditos FOR SELECT USING (auth.uid() = id_usuario);
 CREATE POLICY "Usuarios pueden registrar consumo" ON movimientos_creditos FOR INSERT WITH CHECK (auth.uid() = id_usuario AND tipo_movimiento = 'consumo');
-CREATE POLICY "Admins pueden ver movimientos" ON movimientos_creditos FOR SELECT USING (EXISTS (SELECT 1 FROM perfiles WHERE id = auth.uid() AND is_admin = TRUE));
-CREATE POLICY "Admins pueden insertar movimientos" ON movimientos_creditos FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM perfiles WHERE id = auth.uid() AND is_admin = TRUE));
+CREATE POLICY "Admins pueden ver movimientos" ON movimientos_creditos FOR SELECT USING (public.es_admin());
+CREATE POLICY "Admins pueden insertar movimientos" ON movimientos_creditos FOR INSERT WITH CHECK (public.es_admin());
 
 
 -- 6. Función segura para descontar créditos desde el backend
@@ -152,3 +163,11 @@ BEGIN
     END IF;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
+-- 7. Otorgar permisos sobre todas las tablas, secuencias y funciones al API de Supabase
+GRANT USAGE ON SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO postgres, anon, authenticated, service_role;
+
