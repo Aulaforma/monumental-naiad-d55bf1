@@ -389,7 +389,10 @@
                     })
                 });
                 
-                if (!response.ok) throw new Error('Error al inicializar la pasarela.');
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    throw new Error(errData.error || 'Error al inicializar la pasarela.');
+                }
                 
                 const responseData = await response.json();
                 if (responseData.success && responseData.init_point) {
@@ -400,7 +403,7 @@
                 }
             } catch (error) {
                 console.error("Error al iniciar pago automático:", error);
-                alert("Hubo un error al iniciar el pago seguro. Por favor, intenta de nuevo o utiliza la transferencia manual.");
+                alert("Hubo un error al iniciar el pago seguro: " + error.message + "\n\nPor favor, intenta de nuevo o utiliza la transferencia manual.");
                 btn.disabled = false;
                 btn.textContent = 'Pagar con Tarjeta / Webpay';
             }
