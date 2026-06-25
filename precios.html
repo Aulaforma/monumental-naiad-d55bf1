@@ -77,7 +77,7 @@
     <div class="pricing-container">
         <div class="pricing-header">
             <h1>Packs de Créditos</h1>
-            <p>Elige el plan que mejor se adapte a tus necesidades. Genera rúbricas, evaluaciones y pautas al instante. 1 Crédito = 1 Documento básico.</p>
+            <p>Elige el plan que mejor se adapte a tus necesidades. Genera rúbricas, evaluaciones y pautas al instante. 1 Crédito = 1 Documento básico.<br><strong style="color: var(--primary);">* Todos los precios incluyen IVA (19%).</strong></p>
         </div>
 
         <div class="pricing-grid">
@@ -162,7 +162,11 @@
             <div class="transfer-details">
                 <p>Pack seleccionado: <strong id="modal-pack-name">Pack</strong></p>
                 <p>Créditos: <strong id="modal-pack-credits">0</strong> descargables</p>
-                <p style="font-size: 1.1rem; margin-top: 1rem; border-top: 1px solid #cbd5e1; padding-top: 0.5rem;">Total a pagar: <strong id="modal-pack-price"></strong></p>
+                <div style="margin-top: 1rem; border-top: 1px solid #cbd5e1; padding-top: 0.5rem; font-size: 0.9rem; color: var(--text-muted);">
+                    <p style="display: flex; justify-content: space-between; margin: 0.25rem 0;"><span>Subtotal (Neto):</span> <span id="modal-pack-neto" style="font-weight: 600; color: var(--text-main);"></span></p>
+                    <p style="display: flex; justify-content: space-between; margin: 0.25rem 0;"><span>IVA (19%):</span> <span id="modal-pack-iva" style="font-weight: 600; color: var(--text-main);"></span></p>
+                    <p style="display: flex; justify-content: space-between; margin: 0.5rem 0 0 0; font-size: 1.1rem; font-weight: bold; color: var(--text-main); border-top: 1px dashed #cbd5e1; padding-top: 0.5rem;"><span>Total a pagar:</span> <span id="modal-pack-price" style="color: var(--primary);"></span></p>
+                </div>
             </div>
             
             <div class="modal-actions" style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem;">
@@ -214,7 +218,9 @@
             </div>
             <div class="transfer-details" style="text-align: left;">
                 <p>Pack: <strong id="sim-pack-name">Pack</strong></p>
-                <p>Monto: <strong id="sim-pack-price">$0</strong></p>
+                <p>Monto Neto: <strong id="sim-pack-neto">$0</strong></p>
+                <p>IVA (19%): <strong id="sim-pack-iva">$0</strong></p>
+                <p>Total (IVA Inc.): <strong id="sim-pack-price">$0</strong></p>
                 <p>ID Compra: <strong id="sim-compra-id" style="font-size: 0.75rem; color: #64748b; font-family: monospace;"></strong></p>
             </div>
             <div class="modal-actions" style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem; width: 100%;">
@@ -258,11 +264,16 @@
             // Detectar si estamos en flujo de simulación local
             if (params.get('simulated_checkout') === 'true') {
                 const simId = params.get('id_compra');
-                const simPrice = params.get('price');
+                const simPrice = Number(params.get('price'));
                 const simName = params.get('packName');
 
+                const neto = Math.round(simPrice / 1.19);
+                const iva = simPrice - neto;
+
                 document.getElementById('sim-pack-name').textContent = simName;
-                document.getElementById('sim-pack-price').textContent = '$' + Number(simPrice).toLocaleString('es-CL');
+                document.getElementById('sim-pack-neto').textContent = '$' + neto.toLocaleString('es-CL');
+                document.getElementById('sim-pack-iva').textContent = '$' + iva.toLocaleString('es-CL');
+                document.getElementById('sim-pack-price').textContent = '$' + simPrice.toLocaleString('es-CL');
                 document.getElementById('sim-compra-id').textContent = simId;
 
                 document.getElementById('simulation-modal').style.display = 'flex';
@@ -278,9 +289,15 @@
 
             currentPack = { id: packId, name, credits, price };
             
+            const priceNum = Number(price);
+            const neto = Math.round(priceNum / 1.19);
+            const iva = priceNum - neto;
+
             document.getElementById('modal-pack-name').textContent = name;
             document.getElementById('modal-pack-credits').textContent = credits;
-            document.getElementById('modal-pack-price').textContent = '$' + price.toLocaleString('es-CL');
+            document.getElementById('modal-pack-neto').textContent = '$' + neto.toLocaleString('es-CL');
+            document.getElementById('modal-pack-iva').textContent = '$' + iva.toLocaleString('es-CL');
+            document.getElementById('modal-pack-price').textContent = '$' + priceNum.toLocaleString('es-CL');
             
             document.getElementById('purchase-alert').style.display = 'none';
             document.getElementById('btn-confirm-purchase').style.display = 'block';
