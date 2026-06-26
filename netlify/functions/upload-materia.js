@@ -210,7 +210,7 @@ function generateMockQuestions(subject, quantities, generalInstruction) {
 // ---------------------------------------------------------------------------
 // OpenAI API call using native fetch (no npm dependency)
 // ---------------------------------------------------------------------------
-async function callOpenAI(text, subject, level, matrixType, quantities, generalInstruction, rubricType, rubricLevels, rubricCriteria) {
+async function callOpenAI(text, subject, level, matrixType, quantities, generalInstruction, rubricType, rubricLevels, rubricCriteria, escalaDescriptoresCount) {
     const apiKey = process.env.OPENAI_API_KEY;
 
     if (!apiKey || apiKey.trim() === '' || apiKey === 'tu_api_key_aqui') {
@@ -222,28 +222,66 @@ async function callOpenAI(text, subject, level, matrixType, quantities, generalI
     const isRubric = matrixType === 'rubrica' || matrixType === 'escala_apreciacion';
 
     if (isRubric) {
-        systemPrompt = `Eres un diseñador instruccional experto y docente de educación en Chile.
-Tu tarea es leer la materia entregada y crear un(a) ${matrixType.replace('_', ' ')}.
+        const isEscala = matrixType === 'escala_apreciacion';
+        const numDescriptores = parseInt(escalaDescriptoresCount) || 3;
+
+        if (isEscala) {
+            systemPrompt = `Eres un diseñador instruccional experto y docente de educación en Chile.
+Tu tarea es leer la materia entregada y crear una Escala de Apreciación para evaluar la siguiente actividad.
 
 Asignatura: ${subject}
 Nivel: ${level}
-Tipo de Instrumento: ${matrixType.replace('_', ' ')} (${rubricType === 'analitica' ? 'Desglosado por criterios' : 'Holística/Global'})
+Instrucción del Docente: "${generalInstruction || 'Ninguna'}"
+Criterios Sugeridos: "${rubricCriteria || 'Define los criterios más apropiados según la materia y actividad'}"
+Niveles de Desempeño: "${rubricLevels}"
+Número de descriptores/indicadores por criterio: ${numDescriptores}
+
+Formato de salida requerido:
+Devuelve ÚNICAMENTE un array JSON (sin markdown, sin bloques de código). Cada objeto representa un criterio a evaluar.
+Cada criterio debe tener:
+- "criterio": nombre del criterio
+- "niveles": objeto con los niveles de desempeño (las claves deben coincidir EXACTAMENTE con los provistos en "Niveles de Desempeño")
+- "indicadores": array de exactamente ${numDescriptores} strings. Cada uno es un indicador observable y concreto.
+
+Ejemplo:
+[
+  {
+    "criterio": "Contenido",
+    "niveles": {"Logrado": "", "Medianamente Logrado": "", "No Logrado": ""},
+    "indicadores": ["Menciona al menos 2 fechas importantes", "Explica las causas principales", "Relaciona el tema con el contexto actual"]
+  }
+]`;
+        } else {
+            systemPrompt = `Eres un diseñador instruccional experto y docente de educación en Chile.
+Tu tarea es leer la materia entregada y crear una Rúbrica para evaluar la siguiente actividad.
+
+Asignatura: ${subject}
+Nivel: ${level}
+Tipo de Instrumento: Rúbrica ${rubricType === 'analitica' ? 'Analítica (Desglosada por criterios)' : 'Holística (Evaluación global)'}
 Instrucción del Docente: "${generalInstruction || 'Ninguna'}"
 Criterios Sugeridos: "${rubricCriteria || 'Define los criterios más apropiados según la materia y actividad'}"
 Niveles de Desempeño: "${rubricLevels}"
 
 Formato de salida requerido:
-Devuelve ÚNICAMENTE un array JSON (sin markdown, sin bloques de código) donde cada objeto represente un criterio a evaluar. Para cada criterio, debes definir un descriptor para CADA nivel de desempeño especificado.
-Ejemplo de esquema exacto:
+Devuelve ÚNICAMENTE un array JSON (sin markdown, sin bloques de código). Cada objeto tiene:
+- "criterio": nombre del criterio
+- "niveles": objeto donde cada clave es un nivel y el valor es el descriptor detallado (las claves deben coincidir EXACTAMENTE con los provistos en "Niveles de Desempeño")
+- "factor": número entero 1 (el docente podrá cambiarlo a 2 o 3 en la interfaz)
+
+Ejemplo:
 [
   {
-    "criterio": "Nombre del criterio",
+    "criterio": "Contenido",
     "niveles": {
       "Excelente": "Descriptor detallado...",
-      "Bueno": "Descriptor detallado..."
-    }
+      "Bueno": "Descriptor detallado...",
+      "En proceso": "Descriptor detallado...",
+      "Insuficiente": "Descriptor detallado..."
+    },
+    "factor": 1
   }
 ]`;
+        }
     } else {
         const qTypesDesc = Object.entries(quantities)
             .filter(([, qty]) => qty > 0)
@@ -326,7 +364,7 @@ exports.handler = async function (event) {
 
     try {
         const { fields, files } = parseMultipartForm(event);
-        const { subject, level, matrixType, activityType, quantitiesJson, generalInstruction, rubricType, rubricLevels, rubricCriteria, cost: costStr } = fields;
+        const { subject, level, matrixType, activityType, quantitiesJson, generalInstruction, rubricType, rubricLevels, rubricCriteria, escalaDescriptoresCount, cost: costStr } = fields;
         const quantities = JSON.parse(quantitiesJson || '{}');
 
         // Autenticación y Descuento de créditos (Supabase)
@@ -371,7 +409,7 @@ exports.handler = async function (event) {
             console.log(`Texto extraído: ${text.length} caracteres.`);
         }
 
-        const questions = await callOpenAI(text, subject, level, matrixType, quantities, generalInstruction, rubricType, rubricLevels, rubricCriteria);
+        const questions = await callOpenAI(text, subject, level, matrixType, quantities, generalInstruction, rubricType, rubricLevels, rubricCriteria, escalaDescriptoresCount);
 
         // Guardar registro en documentos_generados (fire and forget)
         fetch(`${supabaseUrl}/rest/v1/documentos_generados`, {

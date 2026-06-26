@@ -383,7 +383,7 @@
                             <!-- Panel de Configuración de Rúbrica/Escala (Oculto por defecto) -->
                             <div id="panel-rubrica" style="margin-top: 0.6rem; display: none; flex-direction: column; gap: 0.4rem;">
                                 <span style="font-size: 0.75rem; font-weight: 600; color: #a5b4fc;">Configuración del Instrumento:</span>
-                                <div style="display: flex; flex-direction: column; gap: 0.2rem;">
+                                <div id="rubric-type-row" style="display: flex; flex-direction: column; gap: 0.2rem;">
                                     <label for="rubric-type" style="font-size: 0.7rem; color: var(--text-muted);">Tipo de Rúbrica:</label>
                                     <select id="rubric-type" class="form-control" style="font-size: 0.75rem; padding: 0.3rem;">
                                         <option value="analitica">Analítica (Desglosada por criterios)</option>
@@ -397,6 +397,17 @@
                                 <div style="display: flex; flex-direction: column; gap: 0.2rem;">
                                     <label for="rubric-criteria" style="font-size: 0.7rem; color: var(--text-muted);">Criterios Clave a Evaluar (Opcional):</label>
                                     <textarea id="rubric-criteria" class="form-control" rows="2" placeholder="Ej. Claridad, contenido, ortografía, creatividad..." style="font-size: 0.75rem; width: 100%; resize: none; padding: 0.3rem;"></textarea>
+                                </div>
+                                <!-- Factor de ponderación (solo Rúbrica) -->
+                                <div id="rubric-factor-row" style="display: flex; flex-direction: column; gap: 0.2rem;">
+                                    <label style="font-size: 0.7rem; color: var(--text-muted);">Factor de ponderación por criterio:</label>
+                                    <span style="font-size: 0.65rem; color: var(--text-muted); font-style: italic;">Cada criterio tendrá una columna donde el docente puede asignar x1, x2 o x3 para multiplicar su puntaje.</span>
+                                </div>
+                                <!-- Descriptores por criterio (solo Escala de Apreciación) -->
+                                <div id="escala-descriptores-row" style="display: none; flex-direction: column; gap: 0.2rem;">
+                                    <label for="escala-descriptores-count" style="font-size: 0.7rem; color: var(--text-muted);">N° de descriptores/indicadores por criterio:</label>
+                                    <input type="number" id="escala-descriptores-count" class="form-control" value="3" min="1" max="8" style="font-size: 0.75rem; padding: 0.3rem; width: 70px;">
+                                    <span style="font-size: 0.65rem; color: var(--text-muted); font-style: italic;">La IA generará esta cantidad de indicadores observables por cada criterio (ej. &quot;Menciona fechas clave&quot;, &quot;Explica causas&quot;).</span>
                                 </div>
                             </div>
 

@@ -65,6 +65,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const rubricType = document.getElementById('rubric-type');
     const rubricLevels = document.getElementById('rubric-levels');
     const rubricCriteria = document.getElementById('rubric-criteria');
+    const rubricFactorRow = document.getElementById('rubric-factor-row');
+    const escalaDescriptoresRow = document.getElementById('escala-descriptores-row');
+    const escalaDescriptoresCount = document.getElementById('escala-descriptores-count');
+    const rubricTypeRow = document.getElementById('rubric-type-row');
 
     // DOM Elements - IA Upload
     const materiaUpload = document.getElementById('materia-upload');
@@ -373,33 +377,47 @@ document.addEventListener('DOMContentLoaded', () => {
     evalLevel.addEventListener('change', updateMetadataHeader);
 
     // Dynamic visibility for Activity and Matrix
+    function updatePanelVisibility() {
+        const matVal = evalMatrix ? evalMatrix.value : 'evaluacion_escrita';
+        if (matVal === 'evaluacion_escrita') {
+            if (panelCantidades) panelCantidades.style.display = 'flex';
+            if (panelRubrica) panelRubrica.style.display = 'none';
+            if (rubricFactorRow) rubricFactorRow.style.display = 'none';
+            if (escalaDescriptoresRow) escalaDescriptoresRow.style.display = 'none';
+            if (rubricTypeRow) rubricTypeRow.style.display = 'none';
+        } else if (matVal === 'rubrica') {
+            if (panelCantidades) panelCantidades.style.display = 'none';
+            if (panelRubrica) panelRubrica.style.display = 'flex';
+            if (rubricFactorRow) rubricFactorRow.style.display = 'flex';
+            if (escalaDescriptoresRow) escalaDescriptoresRow.style.display = 'none';
+            if (rubricTypeRow) rubricTypeRow.style.display = 'flex';
+        } else if (matVal === 'escala_apreciacion') {
+            if (panelCantidades) panelCantidades.style.display = 'none';
+            if (panelRubrica) panelRubrica.style.display = 'flex';
+            if (rubricFactorRow) rubricFactorRow.style.display = 'none';
+            if (escalaDescriptoresRow) escalaDescriptoresRow.style.display = 'flex';
+            if (rubricTypeRow) rubricTypeRow.style.display = 'none';
+        }
+    }
+
     if (evalActivity && evalMatrix) {
         evalActivity.addEventListener('change', () => {
             if (evalActivity.value === 'prueba_sumativa') {
                 evalMatrix.value = 'evaluacion_escrita';
                 evalMatrix.options[1].disabled = true;
                 evalMatrix.options[2].disabled = true;
-                if (panelCantidades) panelCantidades.style.display = 'flex';
-                if (panelRubrica) panelRubrica.style.display = 'none';
             } else {
                 evalMatrix.options[1].disabled = false;
                 evalMatrix.options[2].disabled = false;
                 if (evalMatrix.value === 'evaluacion_escrita') {
                     evalMatrix.value = 'rubrica';
                 }
-                if (panelCantidades) panelCantidades.style.display = 'none';
-                if (panelRubrica) panelRubrica.style.display = 'flex';
             }
+            updatePanelVisibility();
         });
 
         evalMatrix.addEventListener('change', () => {
-            if (evalMatrix.value === 'evaluacion_escrita') {
-                if (panelCantidades) panelCantidades.style.display = 'flex';
-                if (panelRubrica) panelRubrica.style.display = 'none';
-            } else {
-                if (panelCantidades) panelCantidades.style.display = 'none';
-                if (panelRubrica) panelRubrica.style.display = 'flex';
-            }
+            updatePanelVisibility();
         });
     }
 
@@ -543,6 +561,9 @@ document.addEventListener('DOMContentLoaded', () => {
             formData.append('rubricType', rubricType.value);
             formData.append('rubricLevels', rubricLevels.value);
             formData.append('rubricCriteria', rubricCriteria.value);
+            if (evalMatrix.value === 'escala_apreciacion' && escalaDescriptoresCount) {
+                formData.append('escalaDescriptoresCount', escalaDescriptoresCount.value || '3');
+            }
         }
 
         try {
@@ -577,12 +598,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (isRubric) {
                     const rLevels = rubricLevels.value ? rubricLevels.value.split(',').map(s => s.trim()) : ['Excelente', 'Bueno', 'En proceso', 'Insuficiente'];
                     const rCriteria = rubricCriteria.value ? rubricCriteria.value.split(',').map(s => s.trim()) : ['Contenido', 'Claridad', 'Presentación', 'Creatividad'];
+                    const isEscala = evalMatrix.value === 'escala_apreciacion';
+                    const numIndicadores = escalaDescriptoresCount ? parseInt(escalaDescriptoresCount.value) || 3 : 3;
                     
                     const generated = rCriteria.map(crit => {
                         const row = { criterio: crit, niveles: {} };
-                        rLevels.forEach(lvl => {
-                            row.niveles[lvl] = `[Simulado] Descriptor para el criterio de ${crit} en el nivel ${lvl} para la actividad de ${evalActivity.options[evalActivity.selectedIndex].text}.`;
-                        });
+                        if (!isEscala) {
+                            rLevels.forEach(lvl => {
+                                row.niveles[lvl] = `[Simulado] Descriptor para el criterio de ${crit} en el nivel ${lvl} para la actividad de ${evalActivity.options[evalActivity.selectedIndex].text}.`;
+                            });
+                            row.factor = 1;
+                        } else {
+                            // Escala de apreciación: solo niveles Logrado/Medianamente Logrado/No Logrado
+                            rLevels.forEach(lvl => {
+                                row.niveles[lvl] = '';
+                            });
+                            row.indicadores = Array.from({ length: numIndicadores }, (_, i) => `[Simulado] Indicador ${i + 1} para el criterio de ${crit}.`);
+                        }
                         row.type = 'rubric_row';
                         return row;
                     });
@@ -660,6 +692,9 @@ Usando el contenido simulado del archivo "${file.name}".`);
             };
             if (q.criterio !== undefined) mapped.criterio = q.criterio;
             if (q.niveles !== undefined) mapped.niveles = { ...q.niveles };
+            if (q.factor !== undefined) mapped.factor = q.factor;
+            else if (isRubricMode && evalMatrix.value === 'rubrica') mapped.factor = 1;
+            if (q.indicadores !== undefined) mapped.indicadores = [...q.indicadores];
             return mapped;
         });
         renderQuestions();
@@ -1356,9 +1391,10 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
     }
 
     function renderRubricPreview() {
-        questionsList.innerHTML = '<div style="padding: 1rem; color: var(--text-muted); font-size: 0.8rem; text-align: center; border: 1px dashed var(--border); border-radius: var(--radius-md);">Los criterios de la rúbrica se han generado. Puedes verlos en la Vista Previa y descargarlos en Word.<br><br><em>(La edición manual interactiva de descriptores estará disponible en una futura actualización).</em></div>';
+        questionsList.innerHTML = '<div style="padding: 1rem; color: var(--text-muted); font-size: 0.8rem; text-align: center; border: 1px dashed var(--border); border-radius: var(--radius-md);">Los criterios se han generado. Puedes verlos en la Vista Previa y descargarlos en Word.<br><br><em>(La edición manual interactiva estará disponible en una futura actualización).</em></div>';
         
-        const matrixTitle = evalMatrix.value === 'rubrica' ? 'Rúbrica de Evaluación' : 'Escala de Apreciación';
+        const isEscala = evalMatrix.value === 'escala_apreciacion';
+        const matrixTitle = isEscala ? 'Escala de Apreciación' : 'Rúbrica de Evaluación';
         const activityTitle = evalActivity.options[evalActivity.selectedIndex].text;
         
         let html = `
@@ -1368,27 +1404,64 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
             </div>
         `;
         
-        html += '<table style="width: 100%; border-collapse: collapse; font-size: 0.75rem; text-align: left; border: 1px solid #000000; margin-bottom: 1.5rem;">';
-        
-        // Header
-        const levels = Object.keys(questions[0].niveles);
-        html += '<thead style="background-color: #f1f5f9;"><tr><th style="border: 1px solid #000000; padding: 8px; color: #000; width: 20%;">Criterio</th>';
-        levels.forEach(lvl => {
-            html += `<th style="border: 1px solid #000000; padding: 8px; color: #000;">${lvl}</th>`;
-        });
-        html += '</tr></thead><tbody>';
-
-        // Body
-        questions.forEach(q => {
-            html += `<tr><td style="border: 1px solid #000000; padding: 8px; font-weight: bold; color: #000;">${q.criterio}</td>`;
+        if (isEscala) {
+            // === ESCALA DE APRECIACIÓN: criterio + indicadores + columnas Logrado/M.Logrado/No Logrado ===
+            const levels = questions[0].niveles ? Object.keys(questions[0].niveles) : ['Logrado', 'Medianamente Logrado', 'No Logrado'];
+            html += '<table style="width: 100%; border-collapse: collapse; font-size: 0.75rem; text-align: left; border: 1px solid #000000; margin-bottom: 1.5rem;">';
+            html += '<thead style="background-color: #f1f5f9;"><tr>';
+            html += '<th style="border: 1px solid #000000; padding: 8px; color: #000; width: 28%;">Criterio / Indicadores</th>';
             levels.forEach(lvl => {
-                html += `<td style="border: 1px solid #000000; padding: 8px; color: #333; vertical-align: top;">${q.niveles[lvl]}</td>`;
+                html += `<th style="border: 1px solid #000000; padding: 8px; color: #000; text-align: center;">${lvl}</th>`;
             });
-            html += '</tr>';
-        });
+            html += '</tr></thead><tbody>';
 
-        html += '</tbody></table>';
+            questions.forEach(q => {
+                const indicators = q.indicadores || [];
+                const rowspan = Math.max(indicators.length, 1);
+                html += `<tr>`;
+                html += `<td style="border: 1px solid #000000; padding: 8px; vertical-align: top; color: #000;">
+                    <strong>${q.criterio}</strong>
+                    ${indicators.length > 0 ? '<ul style="margin: 6px 0 0 0; padding-left: 1.1rem; color: #333;">' + indicators.map(ind => `<li style="margin-bottom: 3px;">${ind}</li>`).join('') + '</ul>' : ''}
+                </td>`;
+                levels.forEach(lvl => {
+                    html += `<td style="border: 1px solid #000000; padding: 8px; text-align: center; vertical-align: middle; color: #333;">☐</td>`;
+                });
+                html += `</tr>`;
+            });
 
+            html += '</tbody></table>';
+        } else {
+            // === RÚBRICA: criterio + niveles + columna Factor ===
+            const levels = questions[0].niveles ? Object.keys(questions[0].niveles) : [];
+            html += '<table style="width: 100%; border-collapse: collapse; font-size: 0.75rem; text-align: left; border: 1px solid #000000; margin-bottom: 1.5rem;">';
+            html += '<thead style="background-color: #f1f5f9;"><tr>';
+            html += '<th style="border: 1px solid #000000; padding: 8px; color: #000; width: 18%;">Criterio</th>';
+            levels.forEach(lvl => {
+                html += `<th style="border: 1px solid #000000; padding: 8px; color: #000;">${lvl}</th>`;
+            });
+            html += '<th style="border: 1px solid #000000; padding: 8px; color: #000; text-align: center; width: 9%;">Factor</th>';
+            html += '</tr></thead><tbody>';
+
+            questions.forEach((q, idx) => {
+                html += `<tr><td style="border: 1px solid #000000; padding: 8px; font-weight: bold; color: #000; vertical-align: top;">${q.criterio}</td>`;
+                levels.forEach(lvl => {
+                    html += `<td style="border: 1px solid #000000; padding: 8px; color: #333; vertical-align: top;">${q.niveles[lvl] || ''}</td>`;
+                });
+                const factor = q.factor !== undefined ? q.factor : 1;
+                html += `<td style="border: 1px solid #000000; padding: 4px; text-align: center; vertical-align: middle;">
+                    <select id="factor-q-${q.id || idx}" onchange="window._rubricFactors=window._rubricFactors||{}; window._rubricFactors['${q.id || idx}']=parseInt(this.value);" style="font-size: 0.72rem; padding: 2px; border-radius: 4px; border: 1px solid #ccc; background: #fff; width: 52px;">
+                        <option value="1" ${factor===1?'selected':''}>x1</option>
+                        <option value="2" ${factor===2?'selected':''}>x2</option>
+                        <option value="3" ${factor===3?'selected':''}>x3</option>
+                    </select>
+                </td>`;
+                html += '</tr>';
+            });
+
+            html += '</tbody></table>';
+            html += '<p style="font-size: 0.7rem; color: #555; font-style: italic; text-align: center;">💡 El Factor multiplica el puntaje de ese criterio para ponderar su importancia en la evaluación final.</p>';
+        }
+        
         previewQuestions.innerHTML = html;
         previewTotalPoints.textContent = '-';
     }
@@ -1621,7 +1694,9 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
         let docPautaHTML = '';
 
         if (isRubric && questions.length > 0 && questions[0].type === 'rubric_row') {
+            const isEscalaExport = matrixValue === 'escala_apreciacion';
             const levels = Object.keys(questions[0].niveles || {});
+
             docQuestionsHTML += `
                 <div style="margin-top: 15px; margin-bottom: 10px; text-align: center;">
                     <h3 style="font-size: 12pt; font-weight: bold; font-family: 'Arial', sans-serif; margin-bottom: 3px;">${matrixText}</h3>
@@ -1630,37 +1705,66 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
                 <table style="width: 100%; border-collapse: collapse; font-size: 9.5pt; border: 1px solid #000000; font-family: 'Arial', sans-serif;" cellpadding="6">
                     <thead>
                         <tr style="background-color: #f3f4f6;">
-                            <th style="border: 1px solid #000000; text-align: left; font-weight: bold; width: 20%; color: #000000;">Criterio</th>
             `;
-            levels.forEach(lvl => {
-                docQuestionsHTML += `
-                            <th style="border: 1px solid #000000; text-align: center; font-weight: bold; color: #000000;">${lvl}</th>
-                `;
-            });
+
+            if (isEscalaExport) {
+                docQuestionsHTML += `<th style="border: 1px solid #000000; text-align: left; font-weight: bold; width: 35%; color: #000000;">Criterio / Indicadores</th>`;
+
+                levels.forEach(lvl => {
+                    docQuestionsHTML += `<th style="border: 1px solid #000000; text-align: center; font-weight: bold; color: #000000;">${lvl}</th>`;
+                });
+            } else {
+                docQuestionsHTML += `<th style="border: 1px solid #000000; text-align: left; font-weight: bold; width: 18%; color: #000000;">Criterio</th>`;
+                levels.forEach(lvl => {
+                    docQuestionsHTML += `<th style="border: 1px solid #000000; text-align: center; font-weight: bold; color: #000000;">${lvl}</th>`;
+                });
+                docQuestionsHTML += `<th style="border: 1px solid #000000; text-align: center; font-weight: bold; color: #000000; width: 8%;">Factor</th>`;
+            }
+
             docQuestionsHTML += `
                         </tr>
                     </thead>
                     <tbody>
             `;
+
             questions.forEach(q => {
-                docQuestionsHTML += `
+                if (isEscalaExport) {
+                    const indicators = q.indicadores || [];
+                    const indicatorsHTML = indicators.length > 0
+                        ? '<ul style="margin: 4px 0 0 0; padding-left: 16px;">' + indicators.map(ind => `<li style="margin-bottom: 2px; font-size: 8pt;">${ind}</li>`).join('') + '</ul>'
+                        : '';
+                    docQuestionsHTML += `
+                        <tr>
+                            <td style="border: 1px solid #000000; font-weight: bold; vertical-align: top; color: #000000;">
+                                ${q.criterio || ''} ${indicatorsHTML}
+                            </td>
+                    `;
+                    levels.forEach(lvl => {
+                        docQuestionsHTML += `<td style="border: 1px solid #000000; text-align: center; vertical-align: middle; font-size: 13pt;">☐</td>`;
+                    });
+                    docQuestionsHTML += `</tr>`;
+                } else {
+                    const qFactor = (window._rubricFactors && window._rubricFactors[q.id]) || q.factor || 1;
+                    docQuestionsHTML += `
                         <tr>
                             <td style="border: 1px solid #000000; font-weight: bold; vertical-align: top; color: #000000;">${q.criterio || ''}</td>
-                `;
-                levels.forEach(lvl => {
-                    const desc = (q.niveles && q.niveles[lvl]) ? q.niveles[lvl] : '';
-                    docQuestionsHTML += `
-                            <td style="border: 1px solid #000000; vertical-align: top; font-size: 8.5pt; color: #333333;">${desc}</td>
                     `;
-                });
-                docQuestionsHTML += `
-                        </tr>
-                `;
+                    levels.forEach(lvl => {
+                        const desc = (q.niveles && q.niveles[lvl]) ? q.niveles[lvl] : '';
+                        docQuestionsHTML += `<td style="border: 1px solid #000000; vertical-align: top; font-size: 8.5pt; color: #333333;">${desc}</td>`;
+                    });
+                    docQuestionsHTML += `<td style="border: 1px solid #000000; text-align: center; font-weight: bold; color: #000000; font-size: 10pt;">x${qFactor}</td>`;
+                    docQuestionsHTML += `</tr>`;
+                }
             });
+
             docQuestionsHTML += `
                     </tbody>
                 </table>
             `;
+            if (!isEscalaExport) {
+                docQuestionsHTML += `<p style="font-family: 'Arial', sans-serif; font-size: 8.5pt; color: #555; font-style: italic; text-align: center; margin-top: 6px;">* El Factor (x1, x2, x3) multiplica el puntaje del criterio para ponderar su importancia en la evaluación final.</p>`;
+            }
             docPautaHTML = `
                 <div style="font-family: 'Arial', sans-serif; font-size: 10pt; font-style: italic;">
                     La pauta de corrección corresponde a la misma rúbrica/escala detallada anteriormente.

@@ -32,12 +32,12 @@ async function extractText(fileBuffer, mimeType) {
 }
 
 // Helper: Call OpenAI ChatGPT for batch generation
-async function callChatGPTBatch(text, subject, level, activityType, matrixType, quantities, generalInstruction, rubricType, rubricLevels, rubricCriteria) {
+async function callChatGPTBatch(text, subject, level, activityType, matrixType, quantities, generalInstruction, rubricType, rubricLevels, rubricCriteria, escalaDescriptoresCount) {
     const apiKey = process.env.OPENAI_API_KEY;
 
     if (!apiKey || apiKey === 'tu_api_key_aqui' || apiKey.trim() === '') {
         console.log('Utilizando simulación de IA (API Key ausente)...');
-        return generateMockQuestionsBatch(text, subject, level, activityType, matrixType, quantities, generalInstruction, rubricType, rubricLevels, rubricCriteria);
+        return generateMockQuestionsBatch(text, subject, level, activityType, matrixType, quantities, generalInstruction, rubricType, rubricLevels, rubricCriteria, escalaDescriptoresCount);
     }
 
     try {
@@ -48,30 +48,70 @@ async function callChatGPTBatch(text, subject, level, activityType, matrixType, 
         const isRubric = matrixType === 'rubrica' || matrixType === 'escala_apreciacion';
 
         if (isRubric) {
-            systemPrompt = `Eres un diseñador instruccional experto y docente de educación en Chile.
-Tu tarea es leer la materia entregada y crear un(a) ${matrixType.replace('_', ' ')} para evaluar la siguiente actividad: ${activityType}.
+            const isEscala = matrixType === 'escala_apreciacion';
+            const numDescriptores = parseInt(escalaDescriptoresCount) || 3;
+            
+            if (isEscala) {
+                systemPrompt = `Eres un diseñador instruccional experto y docente de educación en Chile.
+Tu tarea es leer la materia entregada y crear una Escala de Apreciación para evaluar la siguiente actividad: ${activityType}.
 
 Asignatura: ${subject}
 Nivel: ${level}
-Tipo de Instrumento: ${matrixType.replace('_', ' ')} (${rubricType === 'analitica' ? 'Desglosado por criterios' : 'Holística/Global'})
+Instrucción del Docente: "${generalInstruction || 'Ninguna'}"
+Criterios Sugeridos: "${rubricCriteria || 'Define los criterios más apropiados según la materia y actividad'}"
+Niveles de Desempeño: "${rubricLevels}"
+Número de descriptores/indicadores por criterio: ${numDescriptores}
+
+Formato de salida requerido:
+Devuelve ÚNICAMENTE un array JSON (sin markdown, sin bloques de código). Cada objeto representa un criterio a evaluar.
+Cada criterio debe tener:
+- "criterio": nombre del criterio
+- "niveles": objeto con los niveles de desempeño (las claves deben coincidir EXACTAMENTE con los provistos en "Niveles de Desempeño")
+- "indicadores": array de exactamente ${numDescriptores} strings. Cada uno es un indicador observable y concreto (ej: "Menciona al menos 2 fechas importantes", "Explica correctamente las causas del evento").
+
+Ejemplo de esquema:
+[
+  {
+    "criterio": "Contenido",
+    "niveles": {
+      "Logrado": "",
+      "Medianamente Logrado": "",
+      "No Logrado": ""
+    },
+    "indicadores": ["Indicador observable 1", "Indicador observable 2", "Indicador observable 3"]
+  }
+]`;
+            } else {
+                systemPrompt = `Eres un diseñador instruccional experto y docente de educación en Chile.
+Tu tarea es leer la materia entregada y crear una Rúbrica para evaluar la siguiente actividad: ${activityType}.
+
+Asignatura: ${subject}
+Nivel: ${level}
+Tipo de Instrumento: Rúbrica ${rubricType === 'analitica' ? 'Analítica (Desglosada por criterios)' : 'Holística (Evaluación global)'}
 Instrucción del Docente: "${generalInstruction || 'Ninguna'}"
 Criterios Sugeridos: "${rubricCriteria || 'Define los criterios más apropiados según la materia y actividad'}"
 Niveles de Desempeño: "${rubricLevels}"
 
 Formato de salida requerido:
-Devuelve ÚNICAMENTE un array JSON (sin markdown, sin bloques de código) donde cada objeto represente un criterio a evaluar. Para cada criterio, debes definir un descriptor para CADA nivel de desempeño especificado.
-Ejemplo de esquema exacto (los nombres de las claves de nivel deben coincidir exactamente con los provistos en "Niveles de Desempeño"):
+Devuelve ÚNICAMENTE un array JSON (sin markdown, sin bloques de código). Cada objeto representa un criterio a evaluar con:
+- "criterio": nombre del criterio
+- "niveles": objeto donde cada clave es un nivel y el valor es el descriptor detallado (las claves deben coincidir EXACTAMENTE con los provistos en "Niveles de Desempeño")
+- "factor": número entero 1 (valor por defecto; el docente podrá cambiarlo a 2 o 3 en la interfaz)
+
+Ejemplo de esquema exacto:
 [
   {
-    "criterio": "Nombre del criterio (ej. Contenido)",
+    "criterio": "Contenido",
     "niveles": {
       "Excelente": "Descriptor detallado...",
       "Bueno": "Descriptor detallado...",
       "En proceso": "Descriptor detallado...",
       "Insuficiente": "Descriptor detallado..."
-    }
+    },
+    "factor": 1
   }
 ]`;
+            }
         } else {
             const qTypesDesc = Object.entries(quantities)
                 .filter(([_, qty]) => qty > 0)
@@ -130,7 +170,7 @@ Devuelve ÚNICAMENTE un array JSON (sin markdown, sin bloques de código) con el
         return JSON.parse(cleanJson);
     } catch (err) {
         console.error('Error llamando a la API de OpenAI, cayendo a simulación:', err);
-        return generateMockQuestionsBatch(text, subject, level, activityType, matrixType, quantities, generalInstruction, rubricType, rubricLevels, rubricCriteria);
+        return generateMockQuestionsBatch(text, subject, level, activityType, matrixType, quantities, generalInstruction, rubricType, rubricLevels, rubricCriteria, escalaDescriptoresCount);
     }
 }
 
@@ -498,7 +538,7 @@ function generateSingleMockQuestion(subject, type, topic) {
 // API Endpoint: Upload material and generate questions by quantity mapping
 app.post('/api/upload-materia', upload.single('materia'), async (req, res) => {
     try {
-        const { subject, level, activityType, matrixType, quantitiesJson, generalInstruction, rubricType, rubricLevels, rubricCriteria } = req.body;
+        const { subject, level, activityType, matrixType, quantitiesJson, generalInstruction, rubricType, rubricLevels, rubricCriteria, escalaDescriptoresCount } = req.body;
         const file = req.file;
 
         if (!file) {
@@ -547,7 +587,7 @@ app.post('/api/upload-materia', upload.single('materia'), async (req, res) => {
         console.log(`Texto extraído con éxito (${text.length} caracteres).`);
 
         // 2. Call ChatGPT
-        const generatedQuestions = await callChatGPTBatch(text, subject, level, activityType, matrixType, quantities, generalInstruction, rubricType, rubricLevels, rubricCriteria);
+        const generatedQuestions = await callChatGPTBatch(text, subject, level, activityType, matrixType, quantities, generalInstruction, rubricType, rubricLevels, rubricCriteria, escalaDescriptoresCount);
 
         // Guardar registro en documentos_generados (fire and forget)
         fetch(`${supabaseUrl}/rest/v1/documentos_generados`, {
