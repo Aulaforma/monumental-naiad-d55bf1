@@ -93,6 +93,43 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    function getNormalizedSubjectKey(subject) {
+        let textToAnalyze = (subject || '').toLowerCase().trim();
+        
+        // If subject is General or empty, try to infer it from other visible inputs in DOM
+        if (textToAnalyze === 'general' || !textToAnalyze) {
+            const unitVal = document.getElementById('eval-unit')?.value || '';
+            const objVal = document.getElementById('eval-objectives')?.value || '';
+            const instVal = document.getElementById('ia-instruction-general')?.value || '';
+            const combined = `${unitVal} ${objVal} ${instVal}`.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            
+            if (combined.includes('matematica') || combined.includes('calculo') || combined.includes('suma') || combined.includes('numero') || combined.includes('algebra') || combined.includes('aritmetica')) {
+                textToAnalyze = 'matematica';
+            } else if (combined.includes('historia') || combined.includes('geografia') || combined.includes('colonia') || combined.includes('independencia') || combined.includes('sociales')) {
+                textToAnalyze = 'historia';
+            } else if (combined.includes('ciencia') || combined.includes('naturales') || combined.includes('celula') || combined.includes('fotosintesis') || combined.includes('agua')) {
+                textToAnalyze = 'ciencias naturales';
+            } else {
+                textToAnalyze = 'lenguaje';
+            }
+        }
+
+        const s = textToAnalyze.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // Remove accents/tildes
+        
+        if (s.includes('matematica')) return 'Matemáticas';
+        if (s.includes('lenguaje') || s.includes('literatura') || s.includes('comunicacion') || s.includes('castellano') || s.includes('espanol') || s.includes('lectura') || s.includes('gramatica')) return 'Lenguaje';
+        if (s.includes('historia') || s.includes('geografia') || s.includes('sociales')) return 'Historia';
+        if (s.includes('ciencia') || s.includes('biologia') || s.includes('quimica') || s.includes('fisica') || s.includes('naturales') || s.includes('medio ambiente')) return 'Ciencias Naturales';
+        if (s.includes('ingles') || s.includes('english')) return 'Inglés';
+        if (s.includes('musica') || s.includes('musical')) return 'Música';
+        if (s.includes('tecnologia')) return 'Tecnología';
+        if (s.includes('artes') || s.includes('dibujo') || s.includes('plastica')) return 'Artes Visuales';
+        if (s.includes('religion') || s.includes('teologia')) return 'Religión';
+        if (s.includes('fisica') && (s.includes('educacion') || s.includes('deporte'))) return 'Educación Física';
+        
+        return 'Lenguaje'; // Default fallback
+    }
+
     // Mock Questions Database for local browser simulation
     const mockQuestionsDb = {
         'Matemáticas': {
@@ -536,7 +573,8 @@ document.addEventListener('DOMContentLoaded', () => {
             console.warn('El servidor local no está disponible. Iniciando simulación local en el navegador...', error);
             
             setTimeout(() => {
-                const db = mockQuestionsDb[currentSubject] || mockQuestionsDb['Lenguaje'];
+                const normalizedSub = getNormalizedSubjectKey(currentSubject);
+                const db = mockQuestionsDb[normalizedSub] || mockQuestionsDb['Lenguaje'];
                 const generated = [];
 
                 Object.keys(quantities).forEach(type => {
@@ -1819,7 +1857,9 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
             <style>
                 @page Section1 {
                     size: 8.5in 11in;
-                    margin: 1.0in 1.0in 1.0in 1.0in;
+                    margin: 1.5in 1.0in 1.0in 1.0in;
+                    mso-header-margin: 0.5in;
+                    mso-header: h1;
                 }
                 div.Section1 {
                     page: Section1;
@@ -1847,34 +1887,37 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
             </style>
         </head>
         <body>
+            <!-- ENCABEZADO DE WORD (Solo se renderiza en el encabezado de página) -->
+            <div style="mso-element:header" id="h1">
+                <p class="MsoHeader" style="margin:0;">
+                    <table style="width: 100%; border-collapse: collapse; border-bottom: 2px solid #000000; margin-bottom: 12px;" cellpadding="0" cellspacing="0">
+                        <tr>
+                            <!-- Columna izquierda: Insignia + Título centrado -->
+                            <td style="border: none; vertical-align: middle; padding-bottom: 10px; width: 70%;">
+                                <table style="border: none; border-collapse: collapse; width: 100%;" cellpadding="0" cellspacing="0">
+                                    <tr>
+                                        <td style="border: none; vertical-align: middle; padding-right: 12px; width: 75px;">
+                                            ${docInsigniaHTML}
+                                        </td>
+                                        <td style="border: none; vertical-align: middle;">
+                                            <p style="margin: 0 0 2px 0; font-size: 14pt; font-weight: bold; font-family: 'Arial', sans-serif;">${matrixText} de ${currentSubject}</p>
+                                            <p style="margin: 0; font-size: 10pt; font-weight: bold; font-family: 'Arial', sans-serif; color: #444444;">Nivel / Curso: ${evalLevel.value}</p>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                            <!-- Columna derecha: Datos del establecimiento -->
+                            <td style="border: none; vertical-align: middle; text-align: right; padding-bottom: 10px; font-size: 8.5pt; font-family: 'Arial', sans-serif;">
+                                <p style="margin: 2px 0;"><strong>Establecimiento:</strong> ${evalInstitucion.value.trim() || '_________________________'}</p>
+                                <p style="margin: 2px 0;"><strong>Docente:</strong> ${evalDocente.value.trim() || '_________________________'}</p>
+                                <p style="margin: 2px 0;"><strong>Departamento:</strong> ${evalDepto.value.trim() || '_________________________'}</p>
+                            </td>
+                        </tr>
+                    </table>
+                </p>
+            </div>
+
             <div class="Section1">
-
-                <!-- ENCABEZADO ÚNICO: Insignia + Datos Institucionales + Título + Unidad/Objetivos -->
-                <table style="width: 100%; border-collapse: collapse; border-bottom: 2px solid #000000; margin-bottom: 12px;" cellpadding="0" cellspacing="0">
-                    <tr>
-                        <!-- Columna izquierda: Insignia + Título centrado -->
-                        <td style="border: none; vertical-align: middle; padding-bottom: 10px; width: 70%;">
-                            <table style="border: none; border-collapse: collapse; width: 100%;" cellpadding="0" cellspacing="0">
-                                <tr>
-                                    <td style="border: none; vertical-align: middle; padding-right: 12px; width: 75px;">
-                                        ${docInsigniaHTML}
-                                    </td>
-                                    <td style="border: none; vertical-align: middle;">
-                                        <p style="margin: 0 0 2px 0; font-size: 14pt; font-weight: bold; font-family: 'Arial', sans-serif;">${matrixText} de ${currentSubject}</p>
-                                        <p style="margin: 0; font-size: 10pt; font-weight: bold; font-family: 'Arial', sans-serif; color: #444444;">Nivel / Curso: ${evalLevel.value}</p>
-                                    </td>
-                                </tr>
-                            </table>
-                        </td>
-                        <!-- Columna derecha: Datos del establecimiento -->
-                        <td style="border: none; vertical-align: middle; text-align: right; padding-bottom: 10px; font-size: 8.5pt; font-family: 'Arial', sans-serif;">
-                            <p style="margin: 2px 0;"><strong>Establecimiento:</strong> ${evalInstitucion.value.trim() || '_________________________'}</p>
-                            <p style="margin: 2px 0;"><strong>Docente:</strong> ${evalDocente.value.trim() || '_________________________'}</p>
-                            <p style="margin: 2px 0;"><strong>Departamento:</strong> ${evalDepto.value.trim() || '_________________________'}</p>
-                        </td>
-                    </tr>
-                </table>
-
                 <!-- UNIDAD Y OBJETIVOS -->
                 <table style="width: 100%; border: 1px solid #000000; border-collapse: collapse; margin-bottom: 12px;">
                     <tr style="background-color: #f3f4f6;">

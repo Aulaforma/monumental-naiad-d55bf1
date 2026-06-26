@@ -195,6 +195,39 @@ Devuelve ÚNICAMENTE un objeto JSON (sin markdown, sin bloques de código) con e
     }
 }
 
+function getNormalizedSubjectKey(subject, text, generalInstruction) {
+    let textToAnalyze = (subject || '').toLowerCase().trim();
+    
+    // If subject is General or empty, try to infer it from other details
+    if (textToAnalyze === 'general' || !textToAnalyze) {
+        const combined = `${text || ''} ${generalInstruction || ''}`.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        if (combined.includes('matematica') || combined.includes('calculo') || combined.includes('suma') || combined.includes('numero') || combined.includes('algebra') || combined.includes('aritmetica')) {
+            textToAnalyze = 'matematica';
+        } else if (combined.includes('historia') || combined.includes('geografia') || combined.includes('colonia') || combined.includes('independencia') || combined.includes('sociales')) {
+            textToAnalyze = 'historia';
+        } else if (combined.includes('ciencia') || combined.includes('naturales') || combined.includes('celula') || combined.includes('fotosintesis') || combined.includes('agua')) {
+            textToAnalyze = 'ciencias naturales';
+        } else {
+            textToAnalyze = 'lenguaje';
+        }
+    }
+
+    const s = textToAnalyze.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // Remove accents
+    
+    if (s.includes('matematica')) return 'Matemáticas';
+    if (s.includes('lenguaje') || s.includes('literatura') || s.includes('comunicacion') || s.includes('castellano') || s.includes('espanol') || s.includes('lectura') || s.includes('gramatica')) return 'Lenguaje';
+    if (s.includes('historia') || s.includes('geografia') || s.includes('sociales')) return 'Historia';
+    if (s.includes('ciencia') || s.includes('biologia') || s.includes('quimica') || s.includes('fisica') || s.includes('naturales') || s.includes('medio ambiente')) return 'Ciencias Naturales';
+    if (s.includes('ingles') || s.includes('english')) return 'Inglés';
+    if (s.includes('musica') || s.includes('musical')) return 'Música';
+    if (s.includes('tecnologia')) return 'Tecnología';
+    if (s.includes('artes') || s.includes('dibujo') || s.includes('plastica')) return 'Artes Visuales';
+    if (s.includes('religion') || s.includes('teologia')) return 'Religión';
+    if (s.includes('fisica') && (s.includes('educacion') || s.includes('deporte'))) return 'Educación Física';
+    
+    return 'Lenguaje';
+}
+
 // Generate structured
 function generateMockQuestionsBatch(text, subject, level, activityType, matrixType, quantities, generalInstruction, rubricType, rubricLevels, rubricCriteria) {
     const isRubric = matrixType === 'rubrica' || matrixType === 'escala_apreciacion';
@@ -334,7 +367,8 @@ function generateMockQuestionsBatch(text, subject, level, activityType, matrixTy
         }
     };
 
-    const db = pool[subject] || pool['Lenguaje'];
+    const normalizedSub = getNormalizedSubjectKey(subject, text, generalInstruction);
+    const db = pool[normalizedSub] || pool['Lenguaje'];
 
     Object.keys(quantities).forEach(type => {
         const qty = parseInt(quantities[type]) || 0;
