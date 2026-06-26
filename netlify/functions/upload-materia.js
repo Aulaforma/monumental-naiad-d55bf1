@@ -165,10 +165,35 @@ function extractReadableStrings(buffer) {
 // ---------------------------------------------------------------------------
 // Mock fallback
 // ---------------------------------------------------------------------------
-function generateMockQuestions(subject, quantities, generalInstruction) {
+function generateMockQuestions(subject, quantities, generalInstruction, matrixType, rubricType, rubricLevels, rubricCriteria, escalaDescriptoresCount) {
+    const isRubric = matrixType === 'rubrica' || matrixType === 'escala_apreciacion';
+    if (isRubric) {
+        const isEscala = matrixType === 'escala_apreciacion';
+        const levels = rubricLevels ? rubricLevels.split(',').map(s => s.trim()) : ['Excelente', 'Bueno', 'En proceso', 'Insuficiente'];
+        const criteriaList = rubricCriteria ? rubricCriteria.split(',').map(s => s.trim()) : ['Contenido', 'Claridad', 'Presentación', 'Creatividad'];
+        const numIndicadores = parseInt(escalaDescriptoresCount) || 3;
+        
+        return criteriaList.map(crit => {
+            const row = { criterio: crit, niveles: {} };
+            if (!isEscala) {
+                levels.forEach(lvl => {
+                    row.niveles[lvl] = `[Simulado] Descriptor para el criterio de ${crit} en el nivel ${lvl}.`;
+                });
+                row.factor = 1;
+            } else {
+                levels.forEach(lvl => {
+                    row.niveles[lvl] = '';
+                });
+                row.indicadores = Array.from({ length: numIndicadores }, (_, i) => `[Simulado] Indicador observable ${i + 1} para el criterio de ${crit}.`);
+            }
+            row.type = 'rubric_row';
+            return row;
+        });
+    }
+
     const pool = {
         abierta: [
-            { text: 'Explica los principales conceptos evaluados en esta unidad y su relevancia actual.', correctAnswer: 'El alumno debe explicar los conceptos con fundamentos, ejemplos y coherencia argumental.' },
+            { text: 'Explica los principales conceptos evaluados en esta unidad y su relevancia actual.', correctAnswer: 'El alumno debe explicar los conceptos con fundamentos, ejemplos y coefiencia argumental.' },
             { text: 'Describe las causas y consecuencias del proceso histórico/científico abordado en la unidad.', correctAnswer: 'El alumno debe mencionar al menos 3 causas y 3 consecuencias con justificación.' },
         ],
         alternativas: [
@@ -215,7 +240,7 @@ async function callOpenAI(text, subject, level, matrixType, quantities, generalI
 
     if (!apiKey || apiKey.trim() === '' || apiKey === 'tu_api_key_aqui') {
         console.log('Sin API Key → usando simulación.');
-        return generateMockQuestions(subject, quantities, generalInstruction);
+        return generateMockQuestions(subject, quantities, generalInstruction, matrixType, rubricType, rubricLevels, rubricCriteria, escalaDescriptoresCount);
     }
 
     let systemPrompt = '';

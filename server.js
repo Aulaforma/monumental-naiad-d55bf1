@@ -269,18 +269,28 @@ function getNormalizedSubjectKey(subject, text, generalInstruction) {
 }
 
 // Generate structured
-function generateMockQuestionsBatch(text, subject, level, activityType, matrixType, quantities, generalInstruction, rubricType, rubricLevels, rubricCriteria) {
+function generateMockQuestionsBatch(text, subject, level, activityType, matrixType, quantities, generalInstruction, rubricType, rubricLevels, rubricCriteria, escalaDescriptoresCount) {
     const isRubric = matrixType === 'rubrica' || matrixType === 'escala_apreciacion';
     
     if (isRubric) {
+        const isEscala = matrixType === 'escala_apreciacion';
         const levels = rubricLevels ? rubricLevels.split(',').map(s => s.trim()) : ['Excelente', 'Bueno', 'En proceso', 'Insuficiente'];
         const criteriaList = rubricCriteria ? rubricCriteria.split(',').map(s => s.trim()) : ['Contenido', 'Claridad', 'Presentación', 'Creatividad'];
+        const numIndicadores = parseInt(escalaDescriptoresCount) || 3;
         
         return criteriaList.map(crit => {
             const row = { criterio: crit, niveles: {} };
-            levels.forEach(lvl => {
-                row.niveles[lvl] = `[Simulado] Descriptor para el criterio de ${crit} en el nivel ${lvl}.`;
-            });
+            if (!isEscala) {
+                levels.forEach(lvl => {
+                    row.niveles[lvl] = `[Simulado] Descriptor para el criterio de ${crit} en el nivel ${lvl}.`;
+                });
+                row.factor = 1;
+            } else {
+                levels.forEach(lvl => {
+                    row.niveles[lvl] = '';
+                });
+                row.indicadores = Array.from({ length: numIndicadores }, (_, i) => `[Simulado] Indicador observable ${i + 1} para el criterio de ${crit}.`);
+            }
             row.type = 'rubric_row'; // Internal identifier for frontend
             return row;
         });

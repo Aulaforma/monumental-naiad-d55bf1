@@ -1406,30 +1406,130 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
         
         if (isEscala) {
             // === ESCALA DE APRECIACIÓN: criterio + indicadores + columnas Logrado/M.Logrado/No Logrado ===
-            const levels = questions[0].niveles ? Object.keys(questions[0].niveles) : ['Logrado', 'Medianamente Logrado', 'No Logrado'];
             html += '<table style="width: 100%; border-collapse: collapse; font-size: 0.75rem; text-align: left; border: 1px solid #000000; margin-bottom: 1.5rem;">';
             html += '<thead style="background-color: #f1f5f9;"><tr>';
-            html += '<th style="border: 1px solid #000000; padding: 8px; color: #000; width: 28%;">Criterio / Indicadores</th>';
-            levels.forEach(lvl => {
-                html += `<th style="border: 1px solid #000000; padding: 8px; color: #000; text-align: center;">${lvl}</th>`;
-            });
+            html += '<th style="border: 1px solid #000000; padding: 8px; color: #000; width: 15%;">Criterio</th>';
+            html += '<th style="border: 1px solid #000000; padding: 8px; color: #000; width: 35%;">Indicadores de Evaluación</th>';
+            html += '<th style="border: 1px solid #000000; padding: 8px; color: #000; text-align: center; width: 9%;">Logrado<br>(3 pts)</th>';
+            html += '<th style="border: 1px solid #000000; padding: 8px; color: #000; text-align: center; width: 9%;">Med. logrado<br>(2 pts)</th>';
+            html += '<th style="border: 1px solid #000000; padding: 8px; color: #000; text-align: center; width: 9%;">Por lograr<br>(1 pt)</th>';
+            html += '<th style="border: 1px solid #000000; padding: 8px; color: #000; text-align: center; width: 9%;">No observado<br>(0 pts)</th>';
+            html += '<th style="border: 1px solid #000000; padding: 8px; color: #000; text-align: center; width: 8%;">Multiplicador</th>';
+            html += '<th style="border: 1px solid #000000; padding: 8px; color: #000; text-align: center; width: 8%;">Puntaje Final</th>';
             html += '</tr></thead><tbody>';
 
-            questions.forEach(q => {
-                const indicators = q.indicadores || [];
-                const rowspan = Math.max(indicators.length, 1);
-                html += `<tr>`;
-                html += `<td style="border: 1px solid #000000; padding: 8px; vertical-align: top; color: #000;">
-                    <strong>${q.criterio}</strong>
-                    ${indicators.length > 0 ? '<ul style="margin: 6px 0 0 0; padding-left: 1.1rem; color: #333;">' + indicators.map(ind => `<li style="margin-bottom: 3px;">${ind}</li>`).join('') + '</ul>' : ''}
-                </td>`;
-                levels.forEach(lvl => {
-                    html += `<td style="border: 1px solid #000000; padding: 8px; text-align: center; vertical-align: middle; color: #333;">☐</td>`;
+            window._escalaSelections = window._escalaSelections || {};
+            window._escalaMultipliers = window._escalaMultipliers || {};
+
+            questions.forEach((q, qIdx) => {
+                const indicators = q.indicadores || [q.criterio];
+                const numRows = indicators.length;
+                
+                indicators.forEach((ind, indIdx) => {
+                    const rowKey = `${qIdx}-${indIdx}`;
+                    
+                    if (window._escalaMultipliers[rowKey] === undefined) {
+                        window._escalaMultipliers[rowKey] = 1;
+                    }
+                    
+                    const selectedPoints = window._escalaSelections[rowKey] !== undefined ? window._escalaSelections[rowKey] : null;
+                    const mult = window._escalaMultipliers[rowKey];
+                    const finalScoreStr = selectedPoints !== null ? `${selectedPoints * mult} / ${3 * mult}` : `0 / ${3 * mult}`;
+
+                    html += `<tr>`;
+                    
+                    if (indIdx === 0) {
+                        html += `<td rowspan="${numRows}" style="border: 1px solid #000000; padding: 8px; vertical-align: top; color: #000; font-weight: bold; background: #fafafa;">${q.criterio}</td>`;
+                    }
+                    
+                    html += `<td style="border: 1px solid #000000; padding: 8px; vertical-align: top; color: #333;">${ind}</td>`;
+                    
+                    const ptsValues = [3, 2, 1, 0];
+                    ptsValues.forEach(pts => {
+                        const isChecked = selectedPoints === pts ? 'checked' : '';
+                        html += `
+                        <td style="border: 1px solid #000000; padding: 8px; text-align: center; vertical-align: middle;">
+                            <input type="radio" name="escala-row-${qIdx}-${indIdx}" value="${pts}" ${isChecked} 
+                                   onchange="window._escalaSelections['${rowKey}']=parseInt(this.value); window._updateEscalaScores();" 
+                                   style="cursor: pointer; width: 14px; height: 14px;">
+                        </td>`;
+                    });
+                    
+                    html += `
+                    <td style="border: 1px solid #000000; padding: 4px; text-align: center; vertical-align: middle;">
+                        <select onchange="window._escalaMultipliers['${rowKey}']=parseInt(this.value); window._updateEscalaScores();" 
+                                style="font-size: 0.72rem; padding: 2px; border-radius: 4px; border: 1px solid #ccc; background: #fff; width: 52px; cursor: pointer;">
+                            <option value="1" ${mult === 1 ? 'selected' : ''}>x1</option>
+                            <option value="2" ${mult === 2 ? 'selected' : ''}>x2</option>
+                            <option value="3" ${mult === 3 ? 'selected' : ''}>x3</option>
+                        </select>
+                    </td>`;
+                    
+                    html += `<td id="escala-score-cell-${rowKey}" style="border: 1px solid #000000; padding: 8px; text-align: center; vertical-align: middle; font-weight: bold; color: #000;">${finalScoreStr}</td>`;
+                    html += `</tr>`;
                 });
-                html += `</tr>`;
             });
 
             html += '</tbody></table>';
+
+            html += `
+            <div id="escala-summary-block" style="margin-top: 1rem; padding: 1rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; max-width: 320px; margin-left: auto;">
+                <h4 style="font-size: 0.85rem; font-weight: bold; margin-bottom: 0.5rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; color: #0f172a;">Resumen de Puntajes</h4>
+                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 4px; color: #334155;">
+                    <span>Puntaje Ideal Total:</span>
+                    <strong id="escala-ideal-total-val">0 pts</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 4px; color: #334155;">
+                    <span>Puntaje Obtenido:</span>
+                    <strong id="escala-obtenido-total-val">0 pts</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; border-top: 1px dashed #cbd5e1; padding-top: 4px; margin-top: 4px; color: #0f172a;">
+                    <span>Porcentaje de Logro:</span>
+                    <strong id="escala-logro-porcentaje-val">0%</strong>
+                </div>
+            </div>
+            `;
+
+            window._updateEscalaScores = function() {
+                let totalIdeal = 0;
+                let totalObtenido = 0;
+                
+                questions.forEach((q, qIdx) => {
+                    const indicators = q.indicadores || [q.criterio];
+                    indicators.forEach((ind, indIdx) => {
+                        const rowKey = `${qIdx}-${indIdx}`;
+                        const mult = window._escalaMultipliers[rowKey] || 1;
+                        const selectedPoints = window._escalaSelections[rowKey] !== undefined ? window._escalaSelections[rowKey] : 0;
+                        
+                        totalIdeal += 3 * mult;
+                        totalObtenido += selectedPoints * mult;
+                        
+                        const cell = document.getElementById(`escala-score-cell-${rowKey}`);
+                        if (cell) {
+                            cell.textContent = `${selectedPoints * mult} / ${3 * mult}`;
+                        }
+                    });
+                });
+                
+                const idealValEl = document.getElementById('escala-ideal-total-val');
+                const obtenidoValEl = document.getElementById('escala-obtenido-total-val');
+                const logroEl = document.getElementById('escala-logro-porcentaje-val');
+                
+                if (idealValEl) idealValEl.textContent = `${totalIdeal} pts`;
+                if (obtenidoValEl) obtenidoValEl.textContent = `${totalObtenido} pts`;
+                
+                const percentage = totalIdeal > 0 ? Math.round((totalObtenido / totalIdeal) * 100) : 0;
+                if (logroEl) logroEl.textContent = `${percentage}%`;
+
+                if (previewTotalPoints) {
+                    previewTotalPoints.textContent = totalIdeal;
+                }
+            };
+
+            setTimeout(() => {
+                if (window._updateEscalaScores) window._updateEscalaScores();
+            }, 0);
+
         } else {
             // === RÚBRICA: criterio + niveles + columna Factor ===
             const levels = questions[0].niveles ? Object.keys(questions[0].niveles) : [];
@@ -1463,7 +1563,9 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
         }
         
         previewQuestions.innerHTML = html;
-        previewTotalPoints.textContent = '-';
+        if (!isEscala) {
+            previewTotalPoints.textContent = '-';
+        }
     }
 
     function renderQuestionsOnlyPreviews() {
@@ -1708,11 +1810,16 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
             `;
 
             if (isEscalaExport) {
-                docQuestionsHTML += `<th style="border: 1px solid #000000; text-align: left; font-weight: bold; width: 35%; color: #000000;">Criterio / Indicadores</th>`;
-
-                levels.forEach(lvl => {
-                    docQuestionsHTML += `<th style="border: 1px solid #000000; text-align: center; font-weight: bold; color: #000000;">${lvl}</th>`;
-                });
+                docQuestionsHTML += `
+                    <th style="border: 1px solid #000000; text-align: left; font-weight: bold; width: 15%; color: #000000;">Criterio</th>
+                    <th style="border: 1px solid #000000; text-align: left; font-weight: bold; width: 45%; color: #000000;">Criterio de evaluación / Indicadores</th>
+                    <th style="border: 1px solid #000000; text-align: center; font-weight: bold; width: 8%; color: #000000;">Logrado<br>(3 pts)</th>
+                    <th style="border: 1px solid #000000; text-align: center; font-weight: bold; width: 8%; color: #000000;">Med. logrado<br>(2 pts)</th>
+                    <th style="border: 1px solid #000000; text-align: center; font-weight: bold; width: 8%; color: #000000;">Por lograr<br>(1 pt)</th>
+                    <th style="border: 1px solid #000000; text-align: center; font-weight: bold; width: 8%; color: #000000;">No observado<br>(0 pts)</th>
+                    <th style="border: 1px solid #000000; text-align: center; font-weight: bold; width: 8%; color: #000000;">Multiplicador</th>
+                    <th style="border: 1px solid #000000; text-align: center; font-weight: bold; width: 8%; color: #000000;">Puntaje Final</th>
+                `;
             } else {
                 docQuestionsHTML += `<th style="border: 1px solid #000000; text-align: left; font-weight: bold; width: 18%; color: #000000;">Criterio</th>`;
                 levels.forEach(lvl => {
@@ -1727,22 +1834,32 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
                     <tbody>
             `;
 
-            questions.forEach(q => {
+            let totalIdealScore = 0;
+
+            questions.forEach((q, qIdx) => {
                 if (isEscalaExport) {
-                    const indicators = q.indicadores || [];
-                    const indicatorsHTML = indicators.length > 0
-                        ? '<ul style="margin: 4px 0 0 0; padding-left: 16px;">' + indicators.map(ind => `<li style="margin-bottom: 2px; font-size: 8pt;">${ind}</li>`).join('') + '</ul>'
-                        : '';
-                    docQuestionsHTML += `
-                        <tr>
-                            <td style="border: 1px solid #000000; font-weight: bold; vertical-align: top; color: #000000;">
-                                ${q.criterio || ''} ${indicatorsHTML}
-                            </td>
-                    `;
-                    levels.forEach(lvl => {
-                        docQuestionsHTML += `<td style="border: 1px solid #000000; text-align: center; vertical-align: middle; font-size: 13pt;">☐</td>`;
+                    const indicators = q.indicadores || [q.criterio];
+                    const numRows = indicators.length;
+                    
+                    indicators.forEach((ind, indIdx) => {
+                        const rowKey = `${qIdx}-${indIdx}`;
+                        const mult = (window._escalaMultipliers && window._escalaMultipliers[rowKey]) || 1;
+                        totalIdealScore += 3 * mult;
+
+                        docQuestionsHTML += `<tr>`;
+                        if (indIdx === 0) {
+                            docQuestionsHTML += `<td rowspan="${numRows}" style="border: 1px solid #000000; font-weight: bold; vertical-align: top; color: #000000; background-color: #fafafa; font-size: 8.5pt; width: 15%;">${q.criterio || ''}</td>`;
+                        }
+                        docQuestionsHTML += `
+                            <td style="border: 1px solid #000000; vertical-align: top; color: #333333; font-size: 8.5pt; width: 45%;">${ind}</td>
+                            <td style="border: 1px solid #000000; text-align: center; vertical-align: middle; font-size: 13pt; width: 8%;">☐</td>
+                            <td style="border: 1px solid #000000; text-align: center; vertical-align: middle; font-size: 13pt; width: 8%;">☐</td>
+                            <td style="border: 1px solid #000000; text-align: center; vertical-align: middle; font-size: 13pt; width: 8%;">☐</td>
+                            <td style="border: 1px solid #000000; text-align: center; vertical-align: middle; font-size: 13pt; width: 8%;">☐</td>
+                            <td style="border: 1px solid #000000; text-align: center; vertical-align: middle; font-weight: bold; font-size: 9pt; width: 8%;">x${mult}</td>
+                            <td style="border: 1px solid #000000; text-align: center; vertical-align: middle; font-size: 9pt; color: #666666; width: 8%;">______ / ${3 * mult}</td>
+                        </tr>`;
                     });
-                    docQuestionsHTML += `</tr>`;
                 } else {
                     const qFactor = (window._rubricFactors && window._rubricFactors[q.id]) || q.factor || 1;
                     docQuestionsHTML += `
@@ -1757,6 +1874,17 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
                     docQuestionsHTML += `</tr>`;
                 }
             });
+
+            if (isEscalaExport) {
+                docQuestionsHTML += `
+                    <tr style="background-color: #f3f4f6; font-weight: bold;">
+                        <td colspan="2" style="border: 1px solid #000000; padding: 8px; text-align: right; font-size: 9.5pt; color: #000000;">TOTALES:</td>
+                        <td colspan="4" style="border: 1px solid #000000; padding: 8px; font-size: 8.5pt; color: #555555; font-style: italic;">Puntaje final = puntaje obtenido × multiplicador</td>
+                        <td style="border: 1px solid #000000; padding: 8px; text-align: center; font-size: 9.5pt; color: #000000;">Ideal:</td>
+                        <td style="border: 1px solid #000000; padding: 8px; text-align: center; font-size: 9.5pt; color: #000000;">______ / ${totalIdealScore} pts</td>
+                    </tr>
+                `;
+            }
 
             docQuestionsHTML += `
                     </tbody>
