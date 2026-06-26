@@ -379,6 +379,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // Dynamic visibility for Activity and Matrix
     function updatePanelVisibility() {
         const matVal = evalMatrix ? evalMatrix.value : 'evaluacion_escrita';
+        const includeAutoevalParent = evalIncludeAutoeval ? evalIncludeAutoeval.closest('.form-group') : null;
+        
+        if (includeAutoevalParent) {
+            if (matVal === 'evaluacion_escrita') {
+                includeAutoevalParent.style.display = 'flex';
+            } else {
+                includeAutoevalParent.style.display = 'none';
+            }
+        }
+
         if (matVal === 'evaluacion_escrita') {
             if (panelCantidades) panelCantidades.style.display = 'flex';
             if (panelRubrica) panelRubrica.style.display = 'none';
@@ -1416,18 +1426,16 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
             previewQuestions.appendChild(sectionDiv);
         });
 
-        // Append Autoevaluación if checkbox is checked
+        // Append Autoevaluación if checkbox is checked (only for written tests)
+        const isRubricOrEscala = evalMatrix.value === 'rubrica' || evalMatrix.value === 'escala_apreciacion';
         const includeAutoeval = evalIncludeAutoeval ? evalIncludeAutoeval.checked : true;
-        if (includeAutoeval) {
+        if (includeAutoeval && !isRubricOrEscala) {
             const autoevalDiv = document.createElement('div');
             autoevalDiv.className = 'a4-autoevaluacion';
             autoevalDiv.style.marginTop = '2rem';
             autoevalDiv.style.borderTop = '1px dashed #000000';
             autoevalDiv.style.paddingTop = '1rem';
-            
-            const isRubricOrEscala = evalMatrix.value === 'rubrica' || evalMatrix.value === 'escala_apreciacion';
-            autoevalDiv.innerHTML = getAutoevalHTML(isRubricOrEscala, false);
-            
+            autoevalDiv.innerHTML = getAutoevalHTML(false, false);
             previewQuestions.appendChild(autoevalDiv);
         }
 
@@ -2243,13 +2251,17 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
             });
         }
 
-        // 3. Build Autoevaluación HTML if checked
+        // 3. Build Autoevaluación HTML if checked (only for written tests)
         let docAutoevalHTML = '';
+        const isRubricOrEscala = matrixValue === 'rubrica' || matrixValue === 'escala_apreciacion';
         const includeAutoeval = evalIncludeAutoeval ? evalIncludeAutoeval.checked : true;
-        if (includeAutoeval) {
-            const isRubricOrEscala = matrixValue === 'rubrica' || matrixValue === 'escala_apreciacion';
-            docAutoevalHTML = getAutoevalHTML(isRubricOrEscala, true);
+        if (includeAutoeval && !isRubricOrEscala) {
+            docAutoevalHTML = getAutoevalHTML(false, true);
         }
+
+        const pageSize = isRubricOrEscala ? '11in 8.5in' : '8.5in 11in';
+        const pageOrientation = isRubricOrEscala ? 'landscape' : 'portrait';
+        const pageMargins = isRubricOrEscala ? '1.0in 1.0in 1.0in 1.0in' : '1.5in 1.0in 1.0in 1.0in';
 
         // 4. Construct Word-Compatible HTML document structure (single clean header block)
         const htmlDoc = `
@@ -2268,8 +2280,9 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
             <![endif]-->
             <style>
                 @page Section1 {
-                    size: 8.5in 11in;
-                    margin: 1.5in 1.0in 1.0in 1.0in;
+                    size: ${pageSize};
+                    margin: ${pageMargins};
+                    mso-page-orientation: ${pageOrientation};
                     mso-header-margin: 0.5in;
                     mso-header: h1;
                 }
