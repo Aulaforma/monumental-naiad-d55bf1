@@ -573,6 +573,25 @@ document.addEventListener('DOMContentLoaded', () => {
             console.warn('El servidor local no está disponible. Iniciando simulación local en el navegador...', error);
             
             setTimeout(() => {
+                const isRubric = evalMatrix.value === 'rubrica' || evalMatrix.value === 'escala_apreciacion';
+                if (isRubric) {
+                    const rLevels = rubricLevels.value ? rubricLevels.value.split(',').map(s => s.trim()) : ['Excelente', 'Bueno', 'En proceso', 'Insuficiente'];
+                    const rCriteria = rubricCriteria.value ? rubricCriteria.value.split(',').map(s => s.trim()) : ['Contenido', 'Claridad', 'Presentación', 'Creatividad'];
+                    
+                    const generated = rCriteria.map(crit => {
+                        const row = { criterio: crit, niveles: {} };
+                        rLevels.forEach(lvl => {
+                            row.niveles[lvl] = `[Simulado] Descriptor para el criterio de ${crit} en el nivel ${lvl} para la actividad de ${evalActivity.options[evalActivity.selectedIndex].text}.`;
+                        });
+                        row.type = 'rubric_row';
+                        return row;
+                    });
+                    
+                    loadQuestionsIntoState(generated);
+                    alert(`[Simulación del Navegador] ¡${evalMatrix.value === 'rubrica' ? 'Rúbrica' : 'Escala'} generada con éxito!`);
+                    return;
+                }
+
                 const normalizedSub = getNormalizedSubjectKey(currentSubject);
                 const db = mockQuestionsDb[normalizedSub] || mockQuestionsDb['Lenguaje'];
                 const generated = [];
@@ -620,23 +639,29 @@ Usando el contenido simulado del archivo "${file.name}".`);
     });
 
     function loadQuestionsIntoState(rawQuestions) {
-        questions = rawQuestions.map(q => ({
-            id: Math.random().toString(36).substring(2, 9),
-            type: q.type || 'abierta',
-            text: q.text || '',
-            topic: q.topic || '',
-            points: q.points || 2,
-            imageUrl: null,
-            imageName: '',
-            options: q.options ? [...q.options] : ['', '', '', ''],
-            justify: q.justify !== undefined ? q.justify : false,
-            matchingPairs: q.matchingPairs ? q.matchingPairs.map(p => ({ ...p })) : [
-                { colA: '', colB: '' },
-                { colA: '', colB: '' },
-                { colA: '', colB: '' }
-            ],
-            correctAnswer: q.correctAnswer || (q.type === 'alternativas' ? 'A' : (q.type === 'verdadero_falso' ? 'V' : ''))
-        }));
+        const isRubricMode = evalMatrix.value === 'rubrica' || evalMatrix.value === 'escala_apreciacion';
+        questions = rawQuestions.map(q => {
+            const mapped = {
+                id: q.id || Math.random().toString(36).substring(2, 9),
+                type: isRubricMode ? 'rubric_row' : (q.type || 'abierta'),
+                text: q.text || '',
+                topic: q.topic || '',
+                points: q.points || 2,
+                imageUrl: q.imageUrl || null,
+                imageName: q.imageName || '',
+                options: q.options ? [...q.options] : ['', '', '', ''],
+                justify: q.justify !== undefined ? q.justify : false,
+                matchingPairs: q.matchingPairs ? q.matchingPairs.map(p => ({ ...p })) : [
+                    { colA: '', colB: '' },
+                    { colA: '', colB: '' },
+                    { colA: '', colB: '' }
+                ],
+                correctAnswer: q.correctAnswer || (q.type === 'alternativas' ? 'A' : (q.type === 'verdadero_falso' ? 'V' : ''))
+            };
+            if (q.criterio !== undefined) mapped.criterio = q.criterio;
+            if (q.niveles !== undefined) mapped.niveles = { ...q.niveles };
+            return mapped;
+        });
         renderQuestions();
     }
 
@@ -1590,210 +1615,260 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
             `;
         }
 
-        // 2. Build Grouped Questions List HTML part
-        const grouped = {
-            'verdadero_falso': [],
-            'alternativas': [],
-            'pareados': [],
-            'completacion': [],
-            'abierta': []
-        };
-        questions.forEach(q => {
-            if (grouped[q.type]) {
-                grouped[q.type].push(q);
-            } else {
-                grouped['abierta'].push(q);
-            }
-        });
-
-        const sectionTypes = [
-            { type: 'verdadero_falso', title: 'ÍTEM DE VERDADERO O FALSO', defaultInstructions: 'Lee las siguientes afirmaciones y escribe una V si es verdadera o una F si es falsa en la línea. Justifica las respuestas falsas. Cada afirmación tiene un valor de {points}.' },
-            { type: 'alternativas', title: 'ÍTEM DE SELECCIÓN MÚLTIPLE', defaultInstructions: 'Lee atentamente cada pregunta y marca la alternativa correcta. Cada pregunta vale {points}.' },
-            { type: 'pareados', title: 'ÍTEM DE TÉRMINOS PAREADOS', defaultInstructions: 'Asocia cada concepto de la Columna A con su definición de la Columna B. Cada par vale {points}.' },
-            { type: 'completacion', title: 'ÍTEM DE COMPLETACIÓN', defaultInstructions: 'Completa los espacios en blanco con la palabra adecuada. Cada espacio vale {points}.' },
-            { type: 'abierta', title: 'ÍTEM DE DESARROLLO / PREGUNTAS ABIERTAS', defaultInstructions: 'Responde detalladamente a las siguientes preguntas en el espacio asignado. Cada pregunta vale {points}.' }
-        ];
-
+        // 2. Build Questions or Rubric HTML part
+        const isRubric = matrixValue === 'rubrica' || matrixValue === 'escala_apreciacion';
         let docQuestionsHTML = '';
         let docPautaHTML = '';
-        let activeSectionCount = 0;
-        const romanNumerals = ['I', 'II', 'III', 'IV', 'V'];
 
-        sectionTypes.forEach(sect => {
-            const qList = grouped[sect.type];
-            if (qList.length === 0) return;
-
-            const roman = romanNumerals[activeSectionCount] || 'I';
-            activeSectionCount++;
-
-            // Student section header
-            const pointsText = getSectionPointsText(qList);
-            const instructions = sect.defaultInstructions.replace('{points}', pointsText);
-
+        if (isRubric && questions.length > 0 && questions[0].type === 'rubric_row') {
+            const levels = Object.keys(questions[0].niveles || {});
             docQuestionsHTML += `
-                <div style="margin-top: 20px; margin-bottom: 5px; border-bottom: 2px solid #000000; padding-bottom: 3px;">
-                    <span style="font-size: 11pt; font-weight: bold; font-family: 'Arial', sans-serif;">${roman}. ${sect.title}</span>
+                <div style="margin-top: 15px; margin-bottom: 10px; text-align: center;">
+                    <h3 style="font-size: 12pt; font-weight: bold; font-family: 'Arial', sans-serif; margin-bottom: 3px;">${matrixText}</h3>
+                    <h4 style="font-size: 10.5pt; font-weight: normal; font-family: 'Arial', sans-serif; margin: 0 0 15px 0;">Actividad a evaluar: ${evalActivity.options[evalActivity.selectedIndex].text}</h4>
                 </div>
-                <div style="font-size: 9.5pt; font-style: italic; color: #333333; margin-bottom: 12px; font-family: 'Arial', sans-serif;">
-                    ${instructions}
-                </div>
+                <table style="width: 100%; border-collapse: collapse; font-size: 9.5pt; border: 1px solid #000000; font-family: 'Arial', sans-serif;" cellpadding="6">
+                    <thead>
+                        <tr style="background-color: #f3f4f6;">
+                            <th style="border: 1px solid #000000; text-align: left; font-weight: bold; width: 20%; color: #000000;">Criterio</th>
             `;
-
-            // Teacher pauta section header
-            docPautaHTML += `
-                <div style="margin-top: 15px; margin-bottom: 5px; border-bottom: 1.5px solid #000000; padding-bottom: 2px;">
-                    <span style="font-size: 11pt; font-weight: bold; font-family: 'Arial', sans-serif;">${roman}. ${sect.title} (Respuestas Clave)</span>
-                </div>
-            `;
-
-            qList.forEach((q, sIdx) => {
-                let imgHTML = '';
-                if (q.imageUrl) {
-                    imgHTML = `<div style="text-align: center; margin: 10px 0;"><img src="${q.imageUrl}" width="220" style="width: 220px; border: 1px solid #cccccc; padding: 2px; border-radius: 4px;" /></div>`;
-                }
-
-                let bodyHTML = '';
-                let pautaItemHTML = '';
-
-                if (q.type === 'abierta') {
-                    bodyHTML = `
-                        <div style="margin-top: 5px; font-size: 10.5pt; font-family: 'Arial', sans-serif;">
-                            <strong>${sIdx + 1}. ${q.text || '___________________________'}</strong>
-                            <span style="float: right; font-weight: normal; font-size: 9.5pt;">(${q.points || 0} pts)</span>
-                        </div>
-                        ${imgHTML}
-                        <div style="border-bottom: 1px dotted #888888; height: 25px; margin-top: 10px;"></div>
-                        <div style="border-bottom: 1px dotted #888888; height: 25px; margin-top: 5px;"></div>
-                    `;
-
-                    pautaItemHTML = `
-                        <div style="margin-top: 5px; font-size: 10pt; margin-bottom: 8px; font-family: 'Arial', sans-serif;">
-                            <strong>${sIdx + 1}. ${q.text || 'Pregunta Abierta'}</strong> (${q.points || 0} pts)<br/>
-                            <div style="margin-top: 3px; margin-left: 15px; background-color: #f3f4f6; border-left: 3px solid #6b7280; padding: 5px; font-style: italic;">
-                                <strong>Respuesta Esperada / Criterios:</strong> ${q.correctAnswer || 'No registrada por el docente.'}
-                            </div>
-                        </div>
-                    `;
-                } else if (q.type === 'alternativas') {
-                    bodyHTML = `
-                        <div style="margin-top: 5px; font-size: 10.5pt; font-family: 'Arial', sans-serif;">
-                            <strong>${sIdx + 1}. ${q.text || '___________________________'}</strong>
-                            <span style="float: right; font-weight: normal; font-size: 9.5pt;">(${q.points || 0} pts)</span>
-                        </div>
-                        ${imgHTML}
-                        <table style="width: 100%; margin-top: 8px; border: none;">
-                            <tr style="border: none;">
-                                <td style="width: 50%; border: none; font-size: 10pt; font-family: 'Arial', sans-serif;">[  ] A) ${q.options[0] || '___________'}</td>
-                                <td style="width: 50%; border: none; font-size: 10pt; font-family: 'Arial', sans-serif;">[  ] B) ${q.options[1] || '___________'}</td>
-                            </tr>
-                            <tr style="border: none;">
-                                <td style="width: 50%; border: none; font-size: 10pt; font-family: 'Arial', sans-serif;">[  ] C) ${q.options[2] || '___________'}</td>
-                                <td style="width: 50%; border: none; font-size: 10pt; font-family: 'Arial', sans-serif;">[  ] D) ${q.options[3] || '___________'}</td>
-                            </tr>
-                        </table>
-                    `;
-
-                    const correctLetter = q.correctAnswer || 'A';
-                    const correctText = q.options[['A', 'B', 'C', 'D'].indexOf(correctLetter)] || '';
-
-                    pautaItemHTML = `
-                        <div style="margin-top: 5px; font-size: 10pt; margin-bottom: 8px; font-family: 'Arial', sans-serif;">
-                            <strong>${sIdx + 1}. ${q.text || 'Pregunta de alternativa'}</strong> (${q.points || 0} pts)<br/>
-                            <div style="margin-left: 15px; color: #16a34a; font-weight: bold;">
-                                ✓ Alternativa Correcta: ${correctLetter}) ${correctText}
-                            </div>
-                        </div>
-                    `;
-                } else if (q.type === 'verdadero_falso') {
-                    bodyHTML = `
-                        <div style="margin-top: 6px; font-size: 10.5pt; font-family: 'Arial', sans-serif;">
-                            <span style="font-family: 'Courier New', monospace; font-weight: bold; margin-right: 5px;">____</span>
-                            <strong>${sIdx + 1}. ${q.text || '___________________________'}</strong>
-                        </div>
-                        ${imgHTML}
-                        ${q.justify ? `<div style="margin-top: 5px; margin-left: 35px; font-size: 9.5pt; font-style: italic; color: #555555; border-bottom: 1px dotted #888888; height: 20px;">Justificación si es falsa: </div>` : ''}
-                    `;
-
-                    const correctVal = q.correctAnswer || 'V';
-                    pautaItemHTML = `
-                        <div style="margin-top: 5px; font-size: 10pt; margin-bottom: 8px; font-family: 'Arial', sans-serif;">
-                            <strong>${sIdx + 1}. ${q.text || 'Afirmación V/F'}</strong> (${q.points || 0} pts)<br/>
-                            <div style="margin-left: 15px; color: #16a34a; font-weight: bold;">
-                                Respuesta Clave: [ ${correctVal} ]
-                            </div>
-                        </div>
-                    `;
-                } else if (q.type === 'pareados') {
-                    const colBShuffled = q.matchingPairs
-                        .map((p, idx) => ({ text: p.colB || '___________', originalIdx: idx }))
-                        .sort((a, b) => a.text.localeCompare(b.text));
-
-                    let leftColHTML = '<table style="width: 100%; border: none;">';
-                    let rightColHTML = '<table style="width: 100%; border: none;">';
-
-                    q.matchingPairs.forEach((pair, idx) => {
-                        leftColHTML += `<tr style="border: none;"><td style="border: none; padding: 4px; font-size: 10pt; font-family: 'Arial', sans-serif;"><strong>${idx + 1}.</strong> ${pair.colA || '___________'}</td></tr>`;
-                    });
-                    leftColHTML += '</table>';
-
-                    colBShuffled.forEach((shuffledPair) => {
-                        rightColHTML += `<tr style="border: none;"><td style="border: none; padding: 4px; font-size: 10pt; font-family: 'Arial', sans-serif;">( &nbsp; &nbsp; ) ${shuffledPair.text}</td></tr>`;
-                    });
-                    rightColHTML += '</table>';
-
-                    bodyHTML = `
-                        <div style="margin-top: 5px; font-size: 10.5pt; margin-bottom: 5px; font-family: 'Arial', sans-serif;">
-                            <strong>${sIdx + 1}. ${q.text || 'Relaciona los conceptos de la columna A con la columna B.'}</strong>
-                            <span style="float: right; font-weight: normal; font-size: 9.5pt;">(${q.points || 0} pts)</span>
-                        </div>
-                        ${imgHTML}
-                        <table style="width: 100%; border: none; margin-top: 5px;">
-                            <tr style="border: none;">
-                                <td style="width: 48%; border: none; vertical-align: top;">${leftColHTML}</td>
-                                <td style="width: 4%; border: none;"></td>
-                                <td style="width: 48%; border: none; vertical-align: top;">${rightColHTML}</td>
-                            </tr>
-                        </table>
-                    `;
-
-                    const associationKeyText = q.matchingPairs
-                        .map((pair, idx) => `[ ${idx + 1} ➔ ${pair.colB || '?'} ]`)
-                        .join(', ');
-
-                    pautaItemHTML = `
-                        <div style="margin-top: 5px; font-size: 10pt; margin-bottom: 8px; font-family: 'Arial', sans-serif;">
-                            <strong>${sIdx + 1}. ${q.text || 'Términos Pareados'}</strong> (${q.points || 0} pts)<br/>
-                            <div style="margin-left: 15px; color: #16a34a; font-weight: bold;">
-                                Clave: ${associationKeyText}
-                            </div>
-                        </div>
-                    `;
-                } else if (q.type === 'completacion') {
-                    bodyHTML = `
-                        <div style="margin-top: 5px; font-size: 10.5pt; font-family: 'Arial', sans-serif;">
-                            <strong>${sIdx + 1}. Completación</strong>
-                            <span style="float: right; font-weight: normal; font-size: 9.5pt;">(${q.points || 0} pts)</span>
-                        </div>
-                        ${imgHTML}
-                        <div style="margin-top: 5px; padding-left: 10px; font-style: italic; color: #111111; font-size: 10pt; font-family: 'Arial', sans-serif;">
-                            "${q.text || 'Completa la oración: El __________ es la base de __________.'}"
-                        </div>
-                    `;
-
-                    pautaItemHTML = `
-                        <div style="margin-top: 5px; font-size: 10pt; margin-bottom: 8px; font-family: 'Arial', sans-serif;">
-                            <strong>${sIdx + 1}. Completación:</strong> "${q.text || '...'}" (${q.points || 0} pts)<br/>
-                            <div style="margin-left: 15px; color: #16a34a; font-weight: bold;">
-                                Respuesta correcta: ${q.correctAnswer || 'No registrada'}
-                            </div>
-                        </div>
-                    `;
-                }
-
-                docQuestionsHTML += `<div style="margin-bottom: 20px;">${bodyHTML}</div>`;
-                docPautaHTML += pautaItemHTML;
+            levels.forEach(lvl => {
+                docQuestionsHTML += `
+                            <th style="border: 1px solid #000000; text-align: center; font-weight: bold; color: #000000;">${lvl}</th>
+                `;
             });
-        });
+            docQuestionsHTML += `
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            questions.forEach(q => {
+                docQuestionsHTML += `
+                        <tr>
+                            <td style="border: 1px solid #000000; font-weight: bold; vertical-align: top; color: #000000;">${q.criterio || ''}</td>
+                `;
+                levels.forEach(lvl => {
+                    const desc = (q.niveles && q.niveles[lvl]) ? q.niveles[lvl] : '';
+                    docQuestionsHTML += `
+                            <td style="border: 1px solid #000000; vertical-align: top; font-size: 8.5pt; color: #333333;">${desc}</td>
+                    `;
+                });
+                docQuestionsHTML += `
+                        </tr>
+                `;
+            });
+            docQuestionsHTML += `
+                    </tbody>
+                </table>
+            `;
+            docPautaHTML = `
+                <div style="font-family: 'Arial', sans-serif; font-size: 10pt; font-style: italic;">
+                    La pauta de corrección corresponde a la misma rúbrica/escala detallada anteriormente.
+                </div>
+            `;
+        } else {
+            const grouped = {
+                'verdadero_falso': [],
+                'alternativas': [],
+                'pareados': [],
+                'completacion': [],
+                'abierta': []
+            };
+            questions.forEach(q => {
+                if (grouped[q.type]) {
+                    grouped[q.type].push(q);
+                } else {
+                    grouped['abierta'].push(q);
+                }
+            });
+
+            const sectionTypes = [
+                { type: 'verdadero_falso', title: 'ÍTEM DE VERDADERO O FALSO', defaultInstructions: 'Lee las siguientes afirmaciones y escribe una V si es verdadera o una F si es falsa en la línea. Justifica las respuestas falsas. Cada afirmación tiene un valor de {points}.' },
+                { type: 'alternativas', title: 'ÍTEM DE SELECCIÓN MÚLTIPLE', defaultInstructions: 'Lee atentamente cada pregunta y marca la alternativa correcta. Cada pregunta vale {points}.' },
+                { type: 'pareados', title: 'ÍTEM DE TÉRMINOS PAREADOS', defaultInstructions: 'Asocia cada concepto de la Columna A con su definición de la Columna B. Cada par vale {points}.' },
+                { type: 'completacion', title: 'ÍTEM DE COMPLETACIÓN', defaultInstructions: 'Completa los espacios en blanco con la palabra adecuada. Cada espacio vale {points}.' },
+                { type: 'abierta', title: 'ÍTEM DE DESARROLLO / PREGUNTAS ABIERTAS', defaultInstructions: 'Responde detalladamente a las siguientes preguntas en el espacio asignado. Cada pregunta vale {points}.' }
+            ];
+
+            let activeSectionCount = 0;
+            const romanNumerals = ['I', 'II', 'III', 'IV', 'V'];
+
+            sectionTypes.forEach(sect => {
+                const qList = grouped[sect.type];
+                if (qList.length === 0) return;
+
+                const roman = romanNumerals[activeSectionCount] || 'I';
+                activeSectionCount++;
+
+                // Student section header
+                const pointsText = getSectionPointsText(qList);
+                const instructions = sect.defaultInstructions.replace('{points}', pointsText);
+
+                docQuestionsHTML += `
+                    <div style="margin-top: 20px; margin-bottom: 5px; border-bottom: 2px solid #000000; padding-bottom: 3px;">
+                        <span style="font-size: 11pt; font-weight: bold; font-family: 'Arial', sans-serif;">${roman}. ${sect.title}</span>
+                    </div>
+                    <div style="font-size: 9.5pt; font-style: italic; color: #333333; margin-bottom: 12px; font-family: 'Arial', sans-serif;">
+                        ${instructions}
+                    </div>
+                `;
+
+                // Teacher pauta section header
+                docPautaHTML += `
+                    <div style="margin-top: 15px; margin-bottom: 5px; border-bottom: 1.5px solid #000000; padding-bottom: 2px;">
+                        <span style="font-size: 11pt; font-weight: bold; font-family: 'Arial', sans-serif;">${roman}. ${sect.title} (Respuestas Clave)</span>
+                    </div>
+                `;
+
+                qList.forEach((q, sIdx) => {
+                    let imgHTML = '';
+                    if (q.imageUrl) {
+                        imgHTML = `<div style="text-align: center; margin: 10px 0;"><img src="${q.imageUrl}" width="220" style="width: 220px; border: 1px solid #cccccc; padding: 2px; border-radius: 4px;" /></div>`;
+                    }
+
+                    let bodyHTML = '';
+                    let pautaItemHTML = '';
+
+                    if (q.type === 'abierta') {
+                        bodyHTML = `
+                            <div style="margin-top: 5px; font-size: 10.5pt; font-family: 'Arial', sans-serif;">
+                                <strong>${sIdx + 1}. ${q.text || '___________________________'}</strong>
+                                <span style="float: right; font-weight: normal; font-size: 9.5pt;">(${q.points || 0} pts)</span>
+                            </div>
+                            ${imgHTML}
+                            <div style="border-bottom: 1px dotted #888888; height: 25px; margin-top: 10px;"></div>
+                            <div style="border-bottom: 1px dotted #888888; height: 25px; margin-top: 5px;"></div>
+                        `;
+
+                        pautaItemHTML = `
+                            <div style="margin-top: 5px; font-size: 10pt; margin-bottom: 8px; font-family: 'Arial', sans-serif;">
+                                <strong>${sIdx + 1}. ${q.text || 'Pregunta Abierta'}</strong> (${q.points || 0} pts)<br/>
+                                <div style="margin-top: 3px; margin-left: 15px; background-color: #f3f4f6; border-left: 3px solid #6b7280; padding: 5px; font-style: italic;">
+                                    <strong>Respuesta Esperada / Criterios:</strong> ${q.correctAnswer || 'No registrada por el docente.'}
+                                </div>
+                            </div>
+                        `;
+                    } else if (q.type === 'alternativas') {
+                        bodyHTML = `
+                            <div style="margin-top: 5px; font-size: 10.5pt; font-family: 'Arial', sans-serif;">
+                                <strong>${sIdx + 1}. ${q.text || '___________________________'}</strong>
+                                <span style="float: right; font-weight: normal; font-size: 9.5pt;">(${q.points || 0} pts)</span>
+                            </div>
+                            ${imgHTML}
+                            <table style="width: 100%; margin-top: 8px; border: none;">
+                                <tr style="border: none;">
+                                    <td style="width: 50%; border: none; font-size: 10pt; font-family: 'Arial', sans-serif;">[  ] A) ${q.options[0] || '___________'}</td>
+                                    <td style="width: 50%; border: none; font-size: 10pt; font-family: 'Arial', sans-serif;">[  ] B) ${q.options[1] || '___________'}</td>
+                                </tr>
+                                <tr style="border: none;">
+                                    <td style="width: 50%; border: none; font-size: 10pt; font-family: 'Arial', sans-serif;">[  ] C) ${q.options[2] || '___________'}</td>
+                                    <td style="width: 50%; border: none; font-size: 10pt; font-family: 'Arial', sans-serif;">[  ] D) ${q.options[3] || '___________'}</td>
+                                </tr>
+                            </table>
+                        `;
+
+                        const correctLetter = q.correctAnswer || 'A';
+                        const correctText = q.options[['A', 'B', 'C', 'D'].indexOf(correctLetter)] || '';
+
+                        pautaItemHTML = `
+                            <div style="margin-top: 5px; font-size: 10pt; margin-bottom: 8px; font-family: 'Arial', sans-serif;">
+                                <strong>${sIdx + 1}. ${q.text || 'Pregunta de alternativa'}</strong> (${q.points || 0} pts)<br/>
+                                <div style="margin-left: 15px; color: #16a34a; font-weight: bold;">
+                                    ✓ Alternativa Correcta: ${correctLetter}) ${correctText}
+                                </div>
+                            </div>
+                        `;
+                    } else if (q.type === 'verdadero_falso') {
+                        bodyHTML = `
+                            <div style="margin-top: 6px; font-size: 10.5pt; font-family: 'Arial', sans-serif;">
+                                <span style="font-family: 'Courier New', monospace; font-weight: bold; margin-right: 5px;">____</span>
+                                <strong>${sIdx + 1}. ${q.text || '___________________________'}</strong>
+                            </div>
+                            ${imgHTML}
+                            ${q.justify ? `<div style="margin-top: 5px; margin-left: 35px; font-size: 9.5pt; font-style: italic; color: #555555; border-bottom: 1px dotted #888888; height: 20px;">Justificación si es falsa: </div>` : ''}
+                        `;
+
+                        const correctVal = q.correctAnswer || 'V';
+                        pautaItemHTML = `
+                            <div style="margin-top: 5px; font-size: 10pt; margin-bottom: 8px; font-family: 'Arial', sans-serif;">
+                                <strong>${sIdx + 1}. ${q.text || 'Afirmación V/F'}</strong> (${q.points || 0} pts)<br/>
+                                <div style="margin-left: 15px; color: #16a34a; font-weight: bold;">
+                                    Respuesta Clave: [ ${correctVal} ]
+                                </div>
+                            </div>
+                        `;
+                    } else if (q.type === 'pareados') {
+                        const colBShuffled = q.matchingPairs
+                            .map((p, idx) => ({ text: p.colB || '___________', originalIdx: idx }))
+                            .sort((a, b) => a.text.localeCompare(b.text));
+
+                        let leftColHTML = '<table style="width: 100%; border: none;">';
+                        let rightColHTML = '<table style="width: 100%; border: none;">';
+
+                        q.matchingPairs.forEach((pair, idx) => {
+                            leftColHTML += `<tr style="border: none;"><td style="border: none; padding: 4px; font-size: 10pt; font-family: 'Arial', sans-serif;"><strong>${idx + 1}.</strong> ${pair.colA || '___________'}</td></tr>`;
+                        });
+                        leftColHTML += '</table>';
+
+                        colBShuffled.forEach((shuffledPair) => {
+                            rightColHTML += `<tr style="border: none;"><td style="border: none; padding: 4px; font-size: 10pt; font-family: 'Arial', sans-serif;">( &nbsp; &nbsp; ) ${shuffledPair.text}</td></tr>`;
+                        });
+                        rightColHTML += '</table>';
+
+                        bodyHTML = `
+                            <div style="margin-top: 5px; font-size: 10.5pt; margin-bottom: 5px; font-family: 'Arial', sans-serif;">
+                                <strong>${sIdx + 1}. ${q.text || 'Relaciona los conceptos de la columna A con la columna B.'}</strong>
+                                <span style="float: right; font-weight: normal; font-size: 9.5pt;">(${q.points || 0} pts)</span>
+                            </div>
+                            ${imgHTML}
+                            <table style="width: 100%; border: none; margin-top: 5px;">
+                                <tr style="border: none;">
+                                    <td style="width: 48%; border: none; vertical-align: top;">${leftColHTML}</td>
+                                    <td style="width: 4%; border: none;"></td>
+                                    <td style="width: 48%; border: none; vertical-align: top;">${rightColHTML}</td>
+                                </tr>
+                            </table>
+                        `;
+
+                        const associationKeyText = q.matchingPairs
+                            .map((pair, idx) => `[ ${idx + 1} ➔ ${pair.colB || '?'} ]`)
+                            .join(', ');
+
+                        pautaItemHTML = `
+                            <div style="margin-top: 5px; font-size: 10pt; margin-bottom: 8px; font-family: 'Arial', sans-serif;">
+                                <strong>${sIdx + 1}. ${q.text || 'Términos Pareados'}</strong> (${q.points || 0} pts)<br/>
+                                <div style="margin-left: 15px; color: #16a34a; font-weight: bold;">
+                                    Clave: ${associationKeyText}
+                                </div>
+                            </div>
+                        `;
+                    } else if (q.type === 'completacion') {
+                        bodyHTML = `
+                            <div style="margin-top: 5px; font-size: 10.5pt; font-family: 'Arial', sans-serif;">
+                                <strong>${sIdx + 1}. Completación</strong>
+                                <span style="float: right; font-weight: normal; font-size: 9.5pt;">(${q.points || 0} pts)</span>
+                            </div>
+                            ${imgHTML}
+                            <div style="margin-top: 5px; padding-left: 10px; font-style: italic; color: #111111; font-size: 10pt; font-family: 'Arial', sans-serif;">
+                                "${q.text || 'Completa la oración: El __________ es la base de __________.'}"
+                            </div>
+                        `;
+
+                        pautaItemHTML = `
+                            <div style="margin-top: 5px; font-size: 10pt; margin-bottom: 8px; font-family: 'Arial', sans-serif;">
+                                <strong>${sIdx + 1}. Completación:</strong> "${q.text || '...'}" (${q.points || 0} pts)<br/>
+                                <div style="margin-left: 15px; color: #16a34a; font-weight: bold;">
+                                    Respuesta correcta: ${q.correctAnswer || 'No registrada'}
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    docQuestionsHTML += `<div style="margin-bottom: 20px;">${bodyHTML}</div>`;
+                    docPautaHTML += pautaItemHTML;
+                });
+            });
+        }
 
         // 3. Build Autoevaluación HTML if checked
         let docAutoevalHTML = '';
@@ -1936,7 +2011,7 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
                     </tr>
                     <tr>
                         <td><strong>Curso:</strong> ${evalLevel.value}</td>
-                        <td><strong>Puntaje:</strong> ____ / ${previewTotalPoints.textContent} puntos totales</td>
+                        <td><strong>Puntaje:</strong> ____ / ${previewTotalPoints.textContent === '-' ? '____' : previewTotalPoints.textContent} puntos totales</td>
                     </tr>
                 </table>
 
