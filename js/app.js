@@ -1410,10 +1410,10 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
             html += '<thead style="background-color: #f1f5f9;"><tr>';
             html += '<th style="border: 1px solid #000000; padding: 8px; color: #000; width: 15%;">Criterio</th>';
             html += '<th style="border: 1px solid #000000; padding: 8px; color: #000; width: 35%;">Indicadores de Evaluación</th>';
-            html += '<th style="border: 1px solid #000000; padding: 8px; color: #000; text-align: center; width: 9%;">Logrado<br>(3 pts)</th>';
-            html += '<th style="border: 1px solid #000000; padding: 8px; color: #000; text-align: center; width: 9%;">Med. logrado<br>(2 pts)</th>';
-            html += '<th style="border: 1px solid #000000; padding: 8px; color: #000; text-align: center; width: 9%;">Por lograr<br>(1 pt)</th>';
-            html += '<th style="border: 1px solid #000000; padding: 8px; color: #000; text-align: center; width: 9%;">No observado<br>(0 pts)</th>';
+            html += '<th style="border: 1px solid #000000; padding: 8px; color: #000; text-align: center; width: 9%;">Logrado<br>(4 pts)</th>';
+            html += '<th style="border: 1px solid #000000; padding: 8px; color: #000; text-align: center; width: 9%;">Med. logrado<br>(3 pts)</th>';
+            html += '<th style="border: 1px solid #000000; padding: 8px; color: #000; text-align: center; width: 9%;">Por lograr<br>(2 pts)</th>';
+            html += '<th style="border: 1px solid #000000; padding: 8px; color: #000; text-align: center; width: 9%;">No observado<br>(1 pt)</th>';
             html += '<th style="border: 1px solid #000000; padding: 8px; color: #000; text-align: center; width: 8%;">Multiplicador</th>';
             html += '<th style="border: 1px solid #000000; padding: 8px; color: #000; text-align: center; width: 8%;">Puntaje Final</th>';
             html += '</tr></thead><tbody>';
@@ -1434,7 +1434,7 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
                     
                     const selectedPoints = window._escalaSelections[rowKey] !== undefined ? window._escalaSelections[rowKey] : null;
                     const mult = window._escalaMultipliers[rowKey];
-                    const finalScoreStr = selectedPoints !== null ? `${selectedPoints * mult} / ${3 * mult}` : `0 / ${3 * mult}`;
+                    const finalScoreStr = selectedPoints !== null ? `${selectedPoints * mult} / ${4 * mult}` : `0 / ${4 * mult}`;
 
                     html += `<tr>`;
                     
@@ -1444,7 +1444,7 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
                     
                     html += `<td style="border: 1px solid #000000; padding: 8px; vertical-align: top; color: #333;">${ind}</td>`;
                     
-                    const ptsValues = [3, 2, 1, 0];
+                    const ptsValues = [4, 3, 2, 1];
                     ptsValues.forEach(pts => {
                         const isChecked = selectedPoints === pts ? 'checked' : '';
                         html += `
@@ -1501,12 +1501,12 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
                         const mult = window._escalaMultipliers[rowKey] || 1;
                         const selectedPoints = window._escalaSelections[rowKey] !== undefined ? window._escalaSelections[rowKey] : 0;
                         
-                        totalIdeal += 3 * mult;
+                        totalIdeal += 4 * mult;
                         totalObtenido += selectedPoints * mult;
                         
                         const cell = document.getElementById(`escala-score-cell-${rowKey}`);
                         if (cell) {
-                            cell.textContent = `${selectedPoints * mult} / ${3 * mult}`;
+                            cell.textContent = `${selectedPoints > 0 ? selectedPoints * mult : 0} / ${4 * mult}`;
                         }
                     });
                 });
@@ -1533,11 +1533,14 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
         } else {
             // === RÚBRICA: criterio + niveles + columna Factor ===
             const levels = questions[0].niveles ? Object.keys(questions[0].niveles) : [];
+            const numLevels = levels.length;
+            
             html += '<table style="width: 100%; border-collapse: collapse; font-size: 0.75rem; text-align: left; border: 1px solid #000000; margin-bottom: 1.5rem;">';
             html += '<thead style="background-color: #f1f5f9;"><tr>';
             html += '<th style="border: 1px solid #000000; padding: 8px; color: #000; width: 18%;">Criterio</th>';
-            levels.forEach(lvl => {
-                html += `<th style="border: 1px solid #000000; padding: 8px; color: #000;">${lvl}</th>`;
+            levels.forEach((lvl, lIdx) => {
+                const pts = numLevels - lIdx;
+                html += `<th style="border: 1px solid #000000; padding: 8px; color: #000;">${lvl}<br>(${pts} pts)</th>`;
             });
             html += '<th style="border: 1px solid #000000; padding: 8px; color: #000; text-align: center; width: 9%;">Factor</th>';
             html += '</tr></thead><tbody>';
@@ -1549,7 +1552,7 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
                 });
                 const factor = q.factor !== undefined ? q.factor : 1;
                 html += `<td style="border: 1px solid #000000; padding: 4px; text-align: center; vertical-align: middle;">
-                    <select id="factor-q-${q.id || idx}" onchange="window._rubricFactors=window._rubricFactors||{}; window._rubricFactors['${q.id || idx}']=parseInt(this.value);" style="font-size: 0.72rem; padding: 2px; border-radius: 4px; border: 1px solid #ccc; background: #fff; width: 52px;">
+                    <select id="factor-q-${q.id || idx}" onchange="window._rubricFactors=window._rubricFactors||{}; window._rubricFactors['${q.id || idx}']=parseInt(this.value); window._updateRubricTotal();" style="font-size: 0.72rem; padding: 2px; border-radius: 4px; border: 1px solid #ccc; background: #fff; width: 52px; cursor: pointer;">
                         <option value="1" ${factor===1?'selected':''}>x1</option>
                         <option value="2" ${factor===2?'selected':''}>x2</option>
                         <option value="3" ${factor===3?'selected':''}>x3</option>
@@ -1559,13 +1562,39 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
             });
 
             html += '</tbody></table>';
-            html += '<p style="font-size: 0.7rem; color: #555; font-style: italic; text-align: center;">💡 El Factor multiplica el puntaje de ese criterio para ponderar su importancia en la evaluación final.</p>';
+            html += `
+            <div id="rubric-summary-block" style="margin-top: 1rem; padding: 1rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; max-width: 320px; margin-left: auto;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #0f172a;">
+                    <span>Puntaje Ideal Total Rúbrica:</span>
+                    <strong id="rubric-ideal-total-val">0 pts</strong>
+                </div>
+            </div>
+            `;
+
+            window._updateRubricTotal = function() {
+                let totalIdeal = 0;
+                questions.forEach((q, idx) => {
+                    const factorSelect = document.getElementById(`factor-q-${q.id || idx}`);
+                    const qFactor = factorSelect ? parseInt(factorSelect.value) : ((window._rubricFactors && window._rubricFactors[q.id]) || q.factor || 1);
+                    totalIdeal += numLevels * qFactor;
+                });
+                
+                const idealValEl = document.getElementById('rubric-ideal-total-val');
+                if (idealValEl) idealValEl.textContent = `${totalIdeal} pts`;
+                
+                if (previewTotalPoints) {
+                    previewTotalPoints.textContent = totalIdeal;
+                }
+            };
+
+            setTimeout(() => {
+                if (window._updateRubricTotal) window._updateRubricTotal();
+            }, 0);
+
+            html += '<p style="font-size: 0.7rem; color: #555; font-style: italic; text-align: center; margin-top: 10px;">💡 El Factor multiplica el puntaje de ese criterio para ponderar su importancia en la evaluación final.</p>';
         }
         
         previewQuestions.innerHTML = html;
-        if (!isEscala) {
-            previewTotalPoints.textContent = '-';
-        }
     }
 
     function renderQuestionsOnlyPreviews() {
@@ -1724,6 +1753,8 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
             return;
         }
 
+        let totalIdealScore = 0;
+
         // 1. Build Insignia HTML part
         let docInsigniaHTML = '';
         if (insigniaImage) {
@@ -1798,6 +1829,7 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
         if (isRubric && questions.length > 0 && questions[0].type === 'rubric_row') {
             const isEscalaExport = matrixValue === 'escala_apreciacion';
             const levels = Object.keys(questions[0].niveles || {});
+            const numLevels = levels.length;
 
             docQuestionsHTML += `
                 <div style="margin-top: 15px; margin-bottom: 10px; text-align: center;">
@@ -1813,17 +1845,18 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
                 docQuestionsHTML += `
                     <th style="border: 1px solid #000000; text-align: left; font-weight: bold; width: 15%; color: #000000;">Criterio</th>
                     <th style="border: 1px solid #000000; text-align: left; font-weight: bold; width: 45%; color: #000000;">Criterio de evaluación / Indicadores</th>
-                    <th style="border: 1px solid #000000; text-align: center; font-weight: bold; width: 8%; color: #000000;">Logrado<br>(3 pts)</th>
-                    <th style="border: 1px solid #000000; text-align: center; font-weight: bold; width: 8%; color: #000000;">Med. logrado<br>(2 pts)</th>
-                    <th style="border: 1px solid #000000; text-align: center; font-weight: bold; width: 8%; color: #000000;">Por lograr<br>(1 pt)</th>
-                    <th style="border: 1px solid #000000; text-align: center; font-weight: bold; width: 8%; color: #000000;">No observado<br>(0 pts)</th>
+                    <th style="border: 1px solid #000000; text-align: center; font-weight: bold; width: 8%; color: #000000;">Logrado<br>(4 pts)</th>
+                    <th style="border: 1px solid #000000; text-align: center; font-weight: bold; width: 8%; color: #000000;">Med. logrado<br>(3 pts)</th>
+                    <th style="border: 1px solid #000000; text-align: center; font-weight: bold; width: 8%; color: #000000;">Por lograr<br>(2 pts)</th>
+                    <th style="border: 1px solid #000000; text-align: center; font-weight: bold; width: 8%; color: #000000;">No observado<br>(1 pt)</th>
                     <th style="border: 1px solid #000000; text-align: center; font-weight: bold; width: 8%; color: #000000;">Multiplicador</th>
                     <th style="border: 1px solid #000000; text-align: center; font-weight: bold; width: 8%; color: #000000;">Puntaje Final</th>
                 `;
             } else {
                 docQuestionsHTML += `<th style="border: 1px solid #000000; text-align: left; font-weight: bold; width: 18%; color: #000000;">Criterio</th>`;
-                levels.forEach(lvl => {
-                    docQuestionsHTML += `<th style="border: 1px solid #000000; text-align: center; font-weight: bold; color: #000000;">${lvl}</th>`;
+                levels.forEach((lvl, lIdx) => {
+                    const pts = numLevels - lIdx;
+                    docQuestionsHTML += `<th style="border: 1px solid #000000; text-align: center; font-weight: bold; color: #000000;">${lvl}<br>(${pts} pts)</th>`;
                 });
                 docQuestionsHTML += `<th style="border: 1px solid #000000; text-align: center; font-weight: bold; color: #000000; width: 8%;">Factor</th>`;
             }
@@ -1834,7 +1867,7 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
                     <tbody>
             `;
 
-            let totalIdealScore = 0;
+            totalIdealScore = 0;
 
             questions.forEach((q, qIdx) => {
                 if (isEscalaExport) {
@@ -1844,7 +1877,7 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
                     indicators.forEach((ind, indIdx) => {
                         const rowKey = `${qIdx}-${indIdx}`;
                         const mult = (window._escalaMultipliers && window._escalaMultipliers[rowKey]) || 1;
-                        totalIdealScore += 3 * mult;
+                        totalIdealScore += 4 * mult;
 
                         docQuestionsHTML += `<tr>`;
                         if (indIdx === 0) {
@@ -1857,11 +1890,13 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
                             <td style="border: 1px solid #000000; text-align: center; vertical-align: middle; font-size: 13pt; width: 8%;">☐</td>
                             <td style="border: 1px solid #000000; text-align: center; vertical-align: middle; font-size: 13pt; width: 8%;">☐</td>
                             <td style="border: 1px solid #000000; text-align: center; vertical-align: middle; font-weight: bold; font-size: 9pt; width: 8%;">x${mult}</td>
-                            <td style="border: 1px solid #000000; text-align: center; vertical-align: middle; font-size: 9pt; color: #666666; width: 8%;">______ / ${3 * mult}</td>
+                            <td style="border: 1px solid #000000; text-align: center; vertical-align: middle; font-size: 9pt; color: #666666; width: 8%;">______ / ${4 * mult}</td>
                         </tr>`;
                     });
                 } else {
                     const qFactor = (window._rubricFactors && window._rubricFactors[q.id]) || q.factor || 1;
+                    totalIdealScore += numLevels * qFactor;
+                    
                     docQuestionsHTML += `
                         <tr>
                             <td style="border: 1px solid #000000; font-weight: bold; vertical-align: top; color: #000000;">${q.criterio || ''}</td>
@@ -1882,6 +1917,14 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
                         <td colspan="4" style="border: 1px solid #000000; padding: 8px; font-size: 8.5pt; color: #555555; font-style: italic;">Puntaje final = puntaje obtenido × multiplicador</td>
                         <td style="border: 1px solid #000000; padding: 8px; text-align: center; font-size: 9.5pt; color: #000000;">Ideal:</td>
                         <td style="border: 1px solid #000000; padding: 8px; text-align: center; font-size: 9.5pt; color: #000000;">______ / ${totalIdealScore} pts</td>
+                    </tr>
+                `;
+            } else {
+                docQuestionsHTML += `
+                    <tr style="background-color: #f3f4f6; font-weight: bold;">
+                        <td style="border: 1px solid #000000; padding: 8px; font-size: 9.5pt; color: #000000;">TOTALES:</td>
+                        <td colspan="${numLevels}" style="border: 1px solid #000000; padding: 8px; font-size: 8.5pt; color: #555555; font-style: italic;">Puntaje total = suma de (puntaje nivel obtenido × factor)</td>
+                        <td style="border: 1px solid #000000; padding: 8px; text-align: center; font-size: 9.5pt; color: #000000;">Ideal: ______ / ${totalIdealScore} pts</td>
                     </tr>
                 `;
             }
@@ -2243,7 +2286,7 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
                     </tr>
                     <tr>
                         <td><strong>Curso:</strong> ${evalLevel.value}</td>
-                        <td><strong>Puntaje:</strong> ____ / ${previewTotalPoints.textContent === '-' ? '____' : previewTotalPoints.textContent} puntos totales</td>
+                        <td><strong>Puntaje:</strong> ____ / ${isRubric ? totalIdealScore : (previewTotalPoints.textContent === '-' ? '____' : previewTotalPoints.textContent)} puntos totales</td>
                     </tr>
                 </table>
 
