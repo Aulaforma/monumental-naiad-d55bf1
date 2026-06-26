@@ -847,6 +847,86 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
         }
     }
 
+    function getAutoevalHTML(isRubricOrEscala, isWord = false) {
+        const autoevalItems = isRubricOrEscala ? [
+            "1. Seguí detalladamente las instrucciones y la pauta de evaluación provista para guiar mi desarrollo.",
+            "2. Colaboré positivamente con mi equipo de trabajo (si aplica) o demostré autonomía e iniciativa individual.",
+            "3. Trabajé de manera organizada, respetando los tiempos de entrega y plazos de la actividad.",
+            "4. Presenté un trabajo limpio, ordenado y que cumple con los objetivos y contenidos requeridos.",
+            "5. Identifico con claridad mis fortalezas y los aspectos a mejorar en mi desempeño para futuros proyectos."
+        ] : [
+            "1. Leí atentamente todas las instrucciones y preguntas antes de responder.",
+            "2. Identifico con claridad los conceptos clave evaluados en esta unidad.",
+            "3. Me preparé adecuadamente estudiando y repasando la materia de clases.",
+            "4. Revisé ordenadamente mi prueba antes de entregarla al docente."
+        ];
+
+        const fontSize = isWord ? '9pt' : '0.65rem';
+        const padding = isWord ? '5px' : '5px';
+        const titleFontSize = isWord ? '11pt' : '0.8rem';
+        const subtitleFontSize = isWord ? '9pt' : '0.65rem';
+        
+        let html = '';
+        if (isWord) {
+            html += `
+                <div style="margin-top: 30px; border-top: 1px dashed #000000; padding-top: 15px; font-family: 'Arial', sans-serif;">
+                    <h3 style="font-size: ${titleFontSize}; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 5px;">Cuestionario de Autoevaluación</h3>
+                    <p style="font-size: ${subtitleFontSize}; font-style: italic; margin-bottom: 10px; text-align: center; color: #444444;">Marca con una X la opción que mejor represente tu desempeño durante esta evaluación:</p>
+                    <table style="width: 100%; border-collapse: collapse; font-size: ${fontSize}; border: 1px solid #000000;" cellpadding="5">
+                        <tr style="background-color: #f3f4f6; font-weight: bold;">
+                            <td style="border: 1px solid #000000; text-align: left; width: 55%;">Criterio / Indicador de Desempeño</td>
+                            <td style="border: 1px solid #000000; text-align: center; width: 15%;">Logrado (L)</td>
+                            <td style="border: 1px solid #000000; text-align: center; width: 15%;">M. Logrado (ML)</td>
+                            <td style="border: 1px solid #000000; text-align: center; width: 15%;">Por Lograr (PL)</td>
+                        </tr>
+            `;
+            autoevalItems.forEach(item => {
+                html += `
+                        <tr>
+                            <td style="border: 1px solid #000000; text-align: left;">${item}</td>
+                            <td style="border: 1px solid #000000; text-align: center;"></td>
+                            <td style="border: 1px solid #000000; text-align: center;"></td>
+                            <td style="border: 1px solid #000000; text-align: center;"></td>
+                        </tr>
+                `;
+            });
+            html += `
+                    </table>
+                </div>
+            `;
+        } else {
+            html += `
+                <h4 style="font-size: ${titleFontSize}; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 0.5rem; color: #000000;">Cuestionario de Autoevaluación</h4>
+                <p style="font-size: ${subtitleFontSize}; font-style: italic; margin-bottom: 0.8rem; text-align: center; color: #334155;">Marca con una X la opción que mejor represente tu desempeño durante esta evaluación:</p>
+                <table style="width: 100%; border-collapse: collapse; font-size: ${fontSize}; text-align: center; border: 1px solid #000000;">
+                    <thead>
+                        <tr style="background-color: #f1f5f9; border-bottom: 1px solid #000000;">
+                            <th style="border: 1px solid #000000; padding: ${padding}; text-align: left; width: 55%; color: #000000;">Criterio / Indicador de Desempeño</th>
+                            <th style="border: 1px solid #000000; padding: ${padding}; width: 15%; color: #000000;">Logrado (L)</th>
+                            <th style="border: 1px solid #000000; padding: ${padding}; width: 15%; color: #000000;">M. Logrado (ML)</th>
+                            <th style="border: 1px solid #000000; padding: ${padding}; width: 15%; color: #000000;">Por Lograr (PL)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            autoevalItems.forEach(item => {
+                html += `
+                        <tr style="border-bottom: 1px solid #000000;">
+                            <td style="border: 1px solid #000000; padding: ${padding}; text-align: left; color: #000000;">${item}</td>
+                            <td style="border: 1px solid #000000; padding: ${padding};"></td>
+                            <td style="border: 1px solid #000000; padding: ${padding};"></td>
+                            <td style="border: 1px solid #000000; padding: ${padding};"></td>
+                        </tr>
+                `;
+            });
+            html += `
+                    </tbody>
+                </table>
+            `;
+        }
+        return html;
+    }
+
     function renderQuestions() {
         questionsList.innerHTML = '';
         
@@ -1344,46 +1424,10 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
             autoevalDiv.style.marginTop = '2rem';
             autoevalDiv.style.borderTop = '1px dashed #000000';
             autoevalDiv.style.paddingTop = '1rem';
-            autoevalDiv.innerHTML = `
-                <h4 style="font-size: 0.8rem; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 0.5rem; color: #000000;">Cuestionario de Autoevaluación</h4>
-                <p style="font-size: 0.65rem; font-style: italic; margin-bottom: 0.8rem; text-align: center; color: #334155;">Marca con una X la opción que mejor represente tu desempeño durante esta evaluación:</p>
-                <table style="width: 100%; border-collapse: collapse; font-size: 0.65rem; text-align: center; border: 1px solid #000000;">
-                    <thead>
-                        <tr style="background-color: #f1f5f9; border-bottom: 1px solid #000000;">
-                            <th style="border: 1px solid #000000; padding: 5px; text-align: left; width: 55%; color: #000000;">Criterio / Indicador de Desempeño</th>
-                            <th style="border: 1px solid #000000; padding: 5px; width: 15%; color: #000000;">Logrado (L)</th>
-                            <th style="border: 1px solid #000000; padding: 5px; width: 15%; color: #000000;">M. Logrado (ML)</th>
-                            <th style="border: 1px solid #000000; padding: 5px; width: 15%; color: #000000;">Por Lograr (PL)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr style="border-bottom: 1px solid #000000;">
-                            <td style="border: 1px solid #000000; padding: 5px; text-align: left; color: #000000;">1. Leí atentamente todas las instrucciones y preguntas antes de responder.</td>
-                            <td style="border: 1px solid #000000; padding: 5px;"></td>
-                            <td style="border: 1px solid #000000; padding: 5px;"></td>
-                            <td style="border: 1px solid #000000; padding: 5px;"></td>
-                        </tr>
-                        <tr style="border-bottom: 1px solid #000000;">
-                            <td style="border: 1px solid #000000; padding: 5px; text-align: left; color: #000000;">2. Identifico con claridad los conceptos clave evaluados en esta unidad.</td>
-                            <td style="border: 1px solid #000000; padding: 5px;"></td>
-                            <td style="border: 1px solid #000000; padding: 5px;"></td>
-                            <td style="border: 1px solid #000000; padding: 5px;"></td>
-                        </tr>
-                        <tr style="border-bottom: 1px solid #000000;">
-                            <td style="border: 1px solid #000000; padding: 5px; text-align: left; color: #000000;">3. Me preparé adecuadamente estudiando y repasando la materia de clases.</td>
-                            <td style="border: 1px solid #000000; padding: 5px;"></td>
-                            <td style="border: 1px solid #000000; padding: 5px;"></td>
-                            <td style="border: 1px solid #000000; padding: 5px;"></td>
-                        </tr>
-                        <tr style="border-bottom: 1px solid #000000;">
-                            <td style="border: 1px solid #000000; padding: 5px; text-align: left; color: #000000;">4. Revisé ordenadamente mi prueba antes de entregarla al docente.</td>
-                            <td style="border: 1px solid #000000; padding: 5px;"></td>
-                            <td style="border: 1px solid #000000; padding: 5px;"></td>
-                            <td style="border: 1px solid #000000; padding: 5px;"></td>
-                        </tr>
-                    </tbody>
-                </table>
-            `;
+            
+            const isRubricOrEscala = evalMatrix.value === 'rubrica' || evalMatrix.value === 'escala_apreciacion';
+            autoevalDiv.innerHTML = getAutoevalHTML(isRubricOrEscala, false);
+            
             previewQuestions.appendChild(autoevalDiv);
         }
 
@@ -1531,56 +1575,106 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
             }, 0);
 
         } else {
-            // === RÚBRICA: criterio + niveles + columna Factor ===
+            // === RÚBRICA: criterio + niveles + columna Factor + Puntaje Final ===
             const levels = questions[0].niveles ? Object.keys(questions[0].niveles) : [];
             const numLevels = levels.length;
             
             html += '<table style="width: 100%; border-collapse: collapse; font-size: 0.75rem; text-align: left; border: 1px solid #000000; margin-bottom: 1.5rem;">';
             html += '<thead style="background-color: #f1f5f9;"><tr>';
-            html += '<th style="border: 1px solid #000000; padding: 8px; color: #000; width: 18%;">Criterio</th>';
+            html += '<th style="border: 1px solid #000000; padding: 8px; color: #000; width: 15%;">Criterio</th>';
             levels.forEach((lvl, lIdx) => {
                 const pts = numLevels - lIdx;
                 html += `<th style="border: 1px solid #000000; padding: 8px; color: #000;">${lvl}<br>(${pts} pts)</th>`;
             });
-            html += '<th style="border: 1px solid #000000; padding: 8px; color: #000; text-align: center; width: 9%;">Factor</th>';
+            html += '<th style="border: 1px solid #000000; padding: 8px; color: #000; text-align: center; width: 8%;">Factor</th>';
+            html += '<th style="border: 1px solid #000000; padding: 8px; color: #000; text-align: center; width: 8%;">Puntaje Final</th>';
             html += '</tr></thead><tbody>';
 
+            window._rubricSelections = window._rubricSelections || {};
+            window._rubricFactors = window._rubricFactors || {};
+
             questions.forEach((q, idx) => {
-                html += `<tr><td style="border: 1px solid #000000; padding: 8px; font-weight: bold; color: #000; vertical-align: top;">${q.criterio}</td>`;
-                levels.forEach(lvl => {
-                    html += `<td style="border: 1px solid #000000; padding: 8px; color: #333; vertical-align: top;">${q.niveles[lvl] || ''}</td>`;
+                html += `<tr><td style="border: 1px solid #000000; padding: 8px; font-weight: bold; color: #000; vertical-align: top; background: #fafafa;">${q.criterio}</td>`;
+                
+                const selectedPoints = window._rubricSelections[idx] !== undefined ? window._rubricSelections[idx] : null;
+                const factor = window._rubricFactors[q.id || idx] !== undefined ? window._rubricFactors[q.id || idx] : (q.factor || 1);
+                
+                levels.forEach((lvl, lIdx) => {
+                    const pts = numLevels - lIdx;
+                    const desc = q.niveles[lvl] || '';
+                    const isChecked = selectedPoints === pts ? 'checked' : '';
+                    
+                    html += `
+                    <td style="border: 1px solid #000000; padding: 8px; color: #333; vertical-align: top; cursor: pointer;" 
+                        onclick="const rad = this.querySelector('input'); if(rad) { rad.checked = true; rad.dispatchEvent(new Event('change')); }">
+                        <div style="display: flex; align-items: flex-start; gap: 4px;">
+                            <input type="radio" name="rubric-row-${idx}" value="${pts}" ${isChecked} 
+                                   onchange="window._rubricSelections['${idx}']=parseInt(this.value); window._updateRubricTotal(); event.stopPropagation();" 
+                                   style="cursor: pointer; margin-top: 2px;">
+                            <span>${desc}</span>
+                        </div>
+                    </td>`;
                 });
-                const factor = q.factor !== undefined ? q.factor : 1;
+                
                 html += `<td style="border: 1px solid #000000; padding: 4px; text-align: center; vertical-align: middle;">
-                    <select id="factor-q-${q.id || idx}" onchange="window._rubricFactors=window._rubricFactors||{}; window._rubricFactors['${q.id || idx}']=parseInt(this.value); window._updateRubricTotal();" style="font-size: 0.72rem; padding: 2px; border-radius: 4px; border: 1px solid #ccc; background: #fff; width: 52px; cursor: pointer;">
+                    <select id="factor-q-${q.id || idx}" onchange="window._rubricFactors['${q.id || idx}']=parseInt(this.value); window._updateRubricTotal();" style="font-size: 0.72rem; padding: 2px; border-radius: 4px; border: 1px solid #ccc; background: #fff; width: 52px; cursor: pointer;">
                         <option value="1" ${factor===1?'selected':''}>x1</option>
                         <option value="2" ${factor===2?'selected':''}>x2</option>
                         <option value="3" ${factor===3?'selected':''}>x3</option>
                     </select>
                 </td>`;
+                
+                const finalScoreStr = selectedPoints !== null ? `${selectedPoints * factor} / ${numLevels * factor}` : `0 / ${numLevels * factor}`;
+                html += `<td id="rubric-score-cell-${idx}" style="border: 1px solid #000000; padding: 8px; text-align: center; vertical-align: middle; font-weight: bold; color: #000;">${finalScoreStr}</td>`;
                 html += '</tr>';
             });
 
             html += '</tbody></table>';
             html += `
             <div id="rubric-summary-block" style="margin-top: 1rem; padding: 1rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; max-width: 320px; margin-left: auto;">
-                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #0f172a;">
-                    <span>Puntaje Ideal Total Rúbrica:</span>
+                <h4 style="font-size: 0.85rem; font-weight: bold; margin-bottom: 0.5rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; color: #0f172a;">Resumen de Puntajes</h4>
+                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 4px; color: #334155;">
+                    <span>Puntaje Ideal Total:</span>
                     <strong id="rubric-ideal-total-val">0 pts</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 4px; color: #334155;">
+                    <span>Puntaje Obtenido:</span>
+                    <strong id="rubric-obtenido-total-val">0 pts</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; border-top: 1px dashed #cbd5e1; padding-top: 4px; margin-top: 4px; color: #0f172a;">
+                    <span>Porcentaje de Logro:</span>
+                    <strong id="rubric-logro-porcentaje-val">0%</strong>
                 </div>
             </div>
             `;
 
             window._updateRubricTotal = function() {
                 let totalIdeal = 0;
+                let totalObtenido = 0;
+                
                 questions.forEach((q, idx) => {
                     const factorSelect = document.getElementById(`factor-q-${q.id || idx}`);
                     const qFactor = factorSelect ? parseInt(factorSelect.value) : ((window._rubricFactors && window._rubricFactors[q.id]) || q.factor || 1);
+                    const selectedPoints = window._rubricSelections[idx] !== undefined ? window._rubricSelections[idx] : 0;
+                    
                     totalIdeal += numLevels * qFactor;
+                    totalObtenido += selectedPoints * qFactor;
+                    
+                    const cell = document.getElementById(`rubric-score-cell-${idx}`);
+                    if (cell) {
+                        cell.textContent = `${selectedPoints > 0 ? selectedPoints * qFactor : 0} / ${numLevels * qFactor}`;
+                    }
                 });
                 
                 const idealValEl = document.getElementById('rubric-ideal-total-val');
+                const obtenidoValEl = document.getElementById('rubric-obtenido-total-val');
+                const logroEl = document.getElementById('rubric-logro-porcentaje-val');
+                
                 if (idealValEl) idealValEl.textContent = `${totalIdeal} pts`;
+                if (obtenidoValEl) obtenidoValEl.textContent = `${totalObtenido} pts`;
+                
+                const percentage = totalIdeal > 0 ? Math.round((totalObtenido / totalIdeal) * 100) : 0;
+                if (logroEl) logroEl.textContent = `${percentage}%`;
                 
                 if (previewTotalPoints) {
                     previewTotalPoints.textContent = totalIdeal;
@@ -1859,6 +1953,7 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
                     docQuestionsHTML += `<th style="border: 1px solid #000000; text-align: center; font-weight: bold; color: #000000;">${lvl}<br>(${pts} pts)</th>`;
                 });
                 docQuestionsHTML += `<th style="border: 1px solid #000000; text-align: center; font-weight: bold; color: #000000; width: 8%;">Factor</th>`;
+                docQuestionsHTML += `<th style="border: 1px solid #000000; text-align: center; font-weight: bold; color: #000000; width: 10%;">Puntaje Final</th>`;
             }
 
             docQuestionsHTML += `
@@ -1894,7 +1989,8 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
                         </tr>`;
                     });
                 } else {
-                    const qFactor = (window._rubricFactors && window._rubricFactors[q.id]) || q.factor || 1;
+                    const qKey = q.id !== undefined ? q.id : qIdx;
+                    const qFactor = (window._rubricFactors && window._rubricFactors[qKey] !== undefined) ? window._rubricFactors[qKey] : (q.factor || 1);
                     totalIdealScore += numLevels * qFactor;
                     
                     docQuestionsHTML += `
@@ -1906,6 +2002,7 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
                         docQuestionsHTML += `<td style="border: 1px solid #000000; vertical-align: top; font-size: 8.5pt; color: #333333;">${desc}</td>`;
                     });
                     docQuestionsHTML += `<td style="border: 1px solid #000000; text-align: center; font-weight: bold; color: #000000; font-size: 10pt;">x${qFactor}</td>`;
+                    docQuestionsHTML += `<td style="border: 1px solid #000000; text-align: center; vertical-align: middle; font-size: 9pt; color: #666666; width: 10%;">______ / ${numLevels * qFactor}</td>`;
                     docQuestionsHTML += `</tr>`;
                 }
             });
@@ -1924,7 +2021,8 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
                     <tr style="background-color: #f3f4f6; font-weight: bold;">
                         <td style="border: 1px solid #000000; padding: 8px; font-size: 9.5pt; color: #000000;">TOTALES:</td>
                         <td colspan="${numLevels}" style="border: 1px solid #000000; padding: 8px; font-size: 8.5pt; color: #555555; font-style: italic;">Puntaje total = suma de (puntaje nivel obtenido × factor)</td>
-                        <td style="border: 1px solid #000000; padding: 8px; text-align: center; font-size: 9.5pt; color: #000000;">Ideal: ______ / ${totalIdealScore} pts</td>
+                        <td style="border: 1px solid #000000; padding: 8px; text-align: center; font-size: 9.5pt; color: #000000;">Ideal:</td>
+                        <td style="border: 1px solid #000000; padding: 8px; text-align: center; font-size: 9.5pt; color: #000000;">______ / ${totalIdealScore} pts</td>
                     </tr>
                 `;
             }
@@ -2149,44 +2247,8 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
         let docAutoevalHTML = '';
         const includeAutoeval = evalIncludeAutoeval ? evalIncludeAutoeval.checked : true;
         if (includeAutoeval) {
-            docAutoevalHTML = `
-                <div style="margin-top: 30px; border-top: 1px dashed #000000; padding-top: 15px; font-family: 'Arial', sans-serif;">
-                    <h3 style="font-size: 11pt; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 5px;">Cuestionario de Autoevaluación</h3>
-                    <p style="font-size: 9pt; font-style: italic; margin-bottom: 10px; text-align: center; color: #444444;">Marca con una X la opción que mejor represente tu desempeño durante esta evaluación:</p>
-                    <table style="width: 100%; border-collapse: collapse; font-size: 9pt; border: 1px solid #000000;" cellpadding="5">
-                        <tr style="background-color: #f3f4f6; font-weight: bold;">
-                            <td style="border: 1px solid #000000; text-align: left; width: 55%;">Criterio / Indicador de Desempeño</td>
-                            <td style="border: 1px solid #000000; text-align: center; width: 15%;">Logrado (L)</td>
-                            <td style="border: 1px solid #000000; text-align: center; width: 15%;">M. Logrado (ML)</td>
-                            <td style="border: 1px solid #000000; text-align: center; width: 15%;">Por Lograr (PL)</td>
-                        </tr>
-                        <tr>
-                            <td style="border: 1px solid #000000; text-align: left;">1. Leí atentamente todas las instrucciones y preguntas antes de responder.</td>
-                            <td style="border: 1px solid #000000; text-align: center;"></td>
-                            <td style="border: 1px solid #000000; text-align: center;"></td>
-                            <td style="border: 1px solid #000000; text-align: center;"></td>
-                        </tr>
-                        <tr>
-                            <td style="border: 1px solid #000000; text-align: left;">2. Identifico con claridad los conceptos clave evaluados en esta unidad.</td>
-                            <td style="border: 1px solid #000000; text-align: center;"></td>
-                            <td style="border: 1px solid #000000; text-align: center;"></td>
-                            <td style="border: 1px solid #000000; text-align: center;"></td>
-                        </tr>
-                        <tr>
-                            <td style="border: 1px solid #000000; text-align: left;">3. Me preparé adecuadamente estudiando y repasando la materia de clases.</td>
-                            <td style="border: 1px solid #000000; text-align: center;"></td>
-                            <td style="border: 1px solid #000000; text-align: center;"></td>
-                            <td style="border: 1px solid #000000; text-align: center;"></td>
-                        </tr>
-                        <tr>
-                            <td style="border: 1px solid #000000; text-align: left;">4. Revisé ordenadamente mi prueba antes de entregarla al docente.</td>
-                            <td style="border: 1px solid #000000; text-align: center;"></td>
-                            <td style="border: 1px solid #000000; text-align: center;"></td>
-                            <td style="border: 1px solid #000000; text-align: center;"></td>
-                        </tr>
-                    </table>
-                </div>
-            `;
+            const isRubricOrEscala = matrixValue === 'rubrica' || matrixValue === 'escala_apreciacion';
+            docAutoevalHTML = getAutoevalHTML(isRubricOrEscala, true);
         }
 
         // 4. Construct Word-Compatible HTML document structure (single clean header block)
