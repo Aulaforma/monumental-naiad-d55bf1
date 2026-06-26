@@ -81,13 +81,45 @@ Ejemplo de esquema:
     "indicadores": ["Indicador observable 1", "Indicador observable 2", "Indicador observable 3"]
   }
 ]`;
+            } else if (rubricType === 'holistica') {
+                systemPrompt = `Eres un diseñador instruccional experto y docente de educación en Chile.
+Tu tarea es leer la materia entregada y crear una Rúbrica Holística (Evaluación Global) para evaluar la siguiente actividad: ${activityType}.
+
+Asignatura: ${subject}
+Nivel: ${level}
+Tipo de Instrumento: Rúbrica Holística (Evaluación global sin desglosar por criterios)
+Instrucción del Docente: "${generalInstruction || 'Ninguna'}"
+Niveles de Desempeño a utilizar: "${rubricLevels}"
+
+Formato de salida requerido:
+Devuelve ÚNICAMENTE un array JSON (sin markdown, sin bloques de código). Cada objeto representa un nivel de desempeño de la escala con:
+- "nivel": nombre del nivel o escala (deben coincidir EXACTAMENTE con los provistos en "Niveles de Desempeño a utilizar", o ser ordenados de mayor a menor puntaje)
+- "puntaje": el puntaje correspondiente a este nivel (número entero, ej: si hay 4 niveles, el máximo es 4 y el mínimo es 1; o si son números del 0 al 5, usar ese número directamente)
+- "descripcion": la descripción global y detallada de lo que el estudiante debe lograr para obtener este nivel en la actividad.
+- "type": "rubric_row_holistic"
+
+Ejemplo de esquema exacto:
+[
+  {
+    "nivel": "Excelente",
+    "puntaje": 4,
+    "descripcion": "Descripción detallada del desempeño global excelente...",
+    "type": "rubric_row_holistic"
+  },
+  {
+    "nivel": "Bueno",
+    "puntaje": 3,
+    "descripcion": "Descripción detallada del desempeño global bueno...",
+    "type": "rubric_row_holistic"
+  }
+]`;
             } else {
                 systemPrompt = `Eres un diseñador instruccional experto y docente de educación en Chile.
 Tu tarea es leer la materia entregada y crear una Rúbrica para evaluar la siguiente actividad: ${activityType}.
 
 Asignatura: ${subject}
 Nivel: ${level}
-Tipo de Instrumento: Rúbrica ${rubricType === 'analitica' ? 'Analítica (Desglosada por criterios)' : 'Holística (Evaluación global)'}
+Tipo de Instrumento: Rúbrica Analítica (Desglosada por criterios)
 Instrucción del Docente: "${generalInstruction || 'Ninguna'}"
 Criterios Sugeridos: "${rubricCriteria || 'Define los criterios más apropiados según la materia y actividad'}"
 Niveles de Desempeño: "${rubricLevels}"
@@ -274,10 +306,23 @@ function generateMockQuestionsBatch(text, subject, level, activityType, matrixTy
     
     if (isRubric) {
         const isEscala = matrixType === 'escala_apreciacion';
+        const isHolistica = matrixType === 'rubrica' && rubricType === 'holistica';
         const levels = rubricLevels ? rubricLevels.split(',').map(s => s.trim()) : ['Excelente', 'Bueno', 'En proceso', 'Insuficiente'];
         const criteriaList = rubricCriteria ? rubricCriteria.split(',').map(s => s.trim()) : ['Contenido', 'Claridad', 'Presentación', 'Creatividad'];
         const numIndicadores = parseInt(escalaDescriptoresCount) || 3;
         
+        if (isHolistica) {
+            return levels.map((lvl, lIdx) => {
+                const pts = levels.length - lIdx;
+                return {
+                    nivel: lvl,
+                    puntaje: pts,
+                    descripcion: `[Simulado] Descripción detallada del desempeño global para el nivel ${lvl} (${pts} puntos).`,
+                    type: 'rubric_row_holistic'
+                };
+            });
+        }
+
         return criteriaList.map(crit => {
             const row = { criterio: crit, niveles: {} };
             if (!isEscala) {

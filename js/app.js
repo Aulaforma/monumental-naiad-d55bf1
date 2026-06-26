@@ -398,9 +398,16 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (matVal === 'rubrica') {
             if (panelCantidades) panelCantidades.style.display = 'none';
             if (panelRubrica) panelRubrica.style.display = 'flex';
-            if (rubricFactorRow) rubricFactorRow.style.display = 'flex';
+            
+            const isHolistica = rubricType && rubricType.value === 'holistica';
+            if (rubricFactorRow) rubricFactorRow.style.display = isHolistica ? 'none' : 'flex';
             if (escalaDescriptoresRow) escalaDescriptoresRow.style.display = 'none';
             if (rubricTypeRow) rubricTypeRow.style.display = 'flex';
+            
+            const criteriaField = document.getElementById('rubric-criteria');
+            if (criteriaField && criteriaField.parentElement) {
+                criteriaField.parentElement.style.display = isHolistica ? 'none' : 'flex';
+            }
         } else if (matVal === 'escala_apreciacion') {
             if (panelCantidades) panelCantidades.style.display = 'none';
             if (panelRubrica) panelRubrica.style.display = 'flex';
@@ -429,6 +436,12 @@ document.addEventListener('DOMContentLoaded', () => {
         evalMatrix.addEventListener('change', () => {
             updatePanelVisibility();
         });
+
+        if (rubricType) {
+            rubricType.addEventListener('change', () => {
+                updatePanelVisibility();
+            });
+        }
     }
 
     if (evalIncludeAutoeval) {
@@ -609,28 +622,42 @@ document.addEventListener('DOMContentLoaded', () => {
                     const rLevels = rubricLevels.value ? rubricLevels.value.split(',').map(s => s.trim()) : ['Excelente', 'Bueno', 'En proceso', 'Insuficiente'];
                     const rCriteria = rubricCriteria.value ? rubricCriteria.value.split(',').map(s => s.trim()) : ['Contenido', 'Claridad', 'Presentación', 'Creatividad'];
                     const isEscala = evalMatrix.value === 'escala_apreciacion';
+                    const isHolistica = evalMatrix.value === 'rubrica' && rubricType.value === 'holistica';
                     const numIndicadores = escalaDescriptoresCount ? parseInt(escalaDescriptoresCount.value) || 3 : 3;
                     
-                    const generated = rCriteria.map(crit => {
-                        const row = { criterio: crit, niveles: {} };
-                        if (!isEscala) {
-                            rLevels.forEach(lvl => {
-                                row.niveles[lvl] = `[Simulado] Descriptor para el criterio de ${crit} en el nivel ${lvl} para la actividad de ${evalActivity.options[evalActivity.selectedIndex].text}.`;
-                            });
-                            row.factor = 1;
-                        } else {
-                            // Escala de apreciación: solo niveles Logrado/Medianamente Logrado/No Logrado
-                            rLevels.forEach(lvl => {
-                                row.niveles[lvl] = '';
-                            });
-                            row.indicadores = Array.from({ length: numIndicadores }, (_, i) => `[Simulado] Indicador ${i + 1} para el criterio de ${crit}.`);
-                        }
-                        row.type = 'rubric_row';
-                        return row;
-                    });
+                    let generated = [];
+                    if (isHolistica) {
+                        generated = rLevels.map((lvl, lIdx) => {
+                            const pts = rLevels.length - lIdx;
+                            return {
+                                nivel: lvl,
+                                puntaje: pts,
+                                descripcion: `[Simulado] Descripción de desempeño global para el nivel ${lvl} (${pts} puntos) en la actividad de ${evalActivity.options[evalActivity.selectedIndex].text}.`,
+                                type: 'rubric_row_holistic'
+                            };
+                        });
+                    } else {
+                        generated = rCriteria.map(crit => {
+                            const row = { criterio: crit, niveles: {} };
+                            if (!isEscala) {
+                                rLevels.forEach(lvl => {
+                                    row.niveles[lvl] = `[Simulado] Descriptor para el criterio de ${crit} en el nivel ${lvl} para la actividad de ${evalActivity.options[evalActivity.selectedIndex].text}.`;
+                                });
+                                row.factor = 1;
+                            } else {
+                                // Escala de apreciación: solo niveles Logrado/Medianamente Logrado/No Logrado
+                                rLevels.forEach(lvl => {
+                                    row.niveles[lvl] = '';
+                                });
+                                row.indicadores = Array.from({ length: numIndicadores }, (_, i) => `[Simulado] Indicador ${i + 1} para el criterio de ${crit}.`);
+                            }
+                            row.type = 'rubric_row';
+                            return row;
+                        });
+                    }
                     
                     loadQuestionsIntoState(generated);
-                    alert(`[Simulación del Navegador] ¡${evalMatrix.value === 'rubrica' ? 'Rúbrica' : 'Escala'} generada con éxito!`);
+                    alert(`[Simulación del Navegador] ¡${evalMatrix.value === 'rubrica' ? (isHolistica ? 'Rúbrica Holística' : 'Rúbrica') : 'Escala'} generada con éxito!`);
                     return;
                 }
 
@@ -685,7 +712,7 @@ Usando el contenido simulado del archivo "${file.name}".`);
         questions = rawQuestions.map(q => {
             const mapped = {
                 id: q.id || Math.random().toString(36).substring(2, 9),
-                type: isRubricMode ? 'rubric_row' : (q.type || 'abierta'),
+                type: isRubricMode ? (q.type || 'rubric_row') : (q.type || 'abierta'),
                 text: q.text || '',
                 topic: q.topic || '',
                 points: q.points || 2,
@@ -705,6 +732,12 @@ Usando el contenido simulado del archivo "${file.name}".`);
             if (q.factor !== undefined) mapped.factor = q.factor;
             else if (isRubricMode && evalMatrix.value === 'rubrica') mapped.factor = 1;
             if (q.indicadores !== undefined) mapped.indicadores = [...q.indicadores];
+            
+            // Holistic rubric fields
+            if (q.nivel !== undefined) mapped.nivel = q.nivel;
+            if (q.puntaje !== undefined) mapped.puntaje = q.puntaje;
+            if (q.descripcion !== undefined) mapped.descripcion = q.descripcion;
+            
             return mapped;
         });
         renderQuestions();
@@ -1583,117 +1616,204 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
             }, 0);
 
         } else {
-            // === RÚBRICA: criterio + niveles + columna Factor + Puntaje Final ===
-            const levels = questions[0].niveles ? Object.keys(questions[0].niveles) : [];
-            const numLevels = levels.length;
-            
-            html += '<table style="width: 100%; border-collapse: collapse; font-size: 0.75rem; text-align: left; border: 1px solid #000000; margin-bottom: 1.5rem;">';
-            html += '<thead style="background-color: #f1f5f9;"><tr>';
-            html += '<th style="border: 1px solid #000000; padding: 8px; color: #000; width: 15%;">Criterio</th>';
-            levels.forEach((lvl, lIdx) => {
-                const pts = numLevels - lIdx;
-                html += `<th style="border: 1px solid #000000; padding: 8px; color: #000;">${lvl}<br>(${pts} pts)</th>`;
-            });
-            html += '<th style="border: 1px solid #000000; padding: 8px; color: #000; text-align: center; width: 8%;">Factor</th>';
-            html += '<th style="border: 1px solid #000000; padding: 8px; color: #000; text-align: center; width: 8%;">Puntaje Final</th>';
-            html += '</tr></thead><tbody>';
+            const isHolistica = rubricType && rubricType.value === 'holistica';
+            if (isHolistica) {
+                // === RÚBRICA HOLÍSTICA: escala/nivel + descripción + selección ===
+                html += '<table style="width: 100%; border-collapse: collapse; font-size: 0.75rem; text-align: left; border: 1px solid #000000; margin-bottom: 1.5rem;">';
+                html += '<thead style="background-color: #f1f5f9;"><tr>';
+                html += '<th style="border: 1px solid #000000; padding: 8px; color: #000; width: 25%; text-align: center;">Escala / Nivel</th>';
+                html += '<th style="border: 1px solid #000000; padding: 8px; color: #000; width: 60%;">Descripción del Desempeño</th>';
+                html += '<th style="border: 1px solid #000000; padding: 8px; color: #000; text-align: center; width: 15%;">Selección</th>';
+                html += '</tr></thead><tbody>';
 
-            window._rubricSelections = window._rubricSelections || {};
-            window._rubricFactors = window._rubricFactors || {};
+                window._rubricHolisticSelection = window._rubricHolisticSelection !== undefined ? window._rubricHolisticSelection : null;
 
-            questions.forEach((q, idx) => {
-                html += `<tr><td style="border: 1px solid #000000; padding: 8px; font-weight: bold; color: #000; vertical-align: top; background: #fafafa;">${q.criterio}</td>`;
-                
-                const selectedPoints = window._rubricSelections[idx] !== undefined ? window._rubricSelections[idx] : null;
-                const factor = window._rubricFactors[q.id || idx] !== undefined ? window._rubricFactors[q.id || idx] : (q.factor || 1);
-                
-                levels.forEach((lvl, lIdx) => {
-                    const pts = numLevels - lIdx;
-                    const desc = q.niveles[lvl] || '';
-                    const isChecked = selectedPoints === pts ? 'checked' : '';
+                const sortedQuestions = [...questions].sort((a, b) => {
+                    const pA = parseInt(a.puntaje) || 0;
+                    const pB = parseInt(b.puntaje) || 0;
+                    return pB - pA;
+                });
+
+                sortedQuestions.forEach((q, idx) => {
+                    const nivelText = q.nivel || `Nivel ${q.puntaje}`;
+                    const ptsText = q.puntaje !== undefined ? `(${q.puntaje} pts)` : '';
+                    const desc = q.descripcion || '';
+                    const isSelected = window._rubricHolisticSelection === idx;
                     
                     html += `
-                    <td style="border: 1px solid #000000; padding: 8px; color: #333; vertical-align: top; cursor: pointer;" 
+                    <tr style="cursor: pointer; ${isSelected ? 'background-color: #f8fafc;' : ''}" 
                         onclick="const rad = this.querySelector('input'); if(rad) { rad.checked = true; rad.dispatchEvent(new Event('change')); }">
-                        <div style="display: flex; align-items: flex-start; gap: 4px;">
-                            <input type="radio" name="rubric-row-${idx}" value="${pts}" ${isChecked} 
-                                   onchange="window._rubricSelections['${idx}']=parseInt(this.value); window._updateRubricTotal(); event.stopPropagation();" 
-                                   style="cursor: pointer; margin-top: 2px;">
-                            <span>${desc}</span>
-                        </div>
-                    </td>`;
+                        <td style="border: 1px solid #000000; padding: 8px; font-weight: bold; color: #000; text-align: center; vertical-align: middle; background: #fafafa;">
+                            ${nivelText} <br>${ptsText}
+                        </td>
+                        <td style="border: 1px solid #000000; padding: 8px; color: #333; vertical-align: top;">
+                            ${desc}
+                        </td>
+                        <td style="border: 1px solid #000000; padding: 8px; text-align: center; vertical-align: middle;">
+                            <input type="radio" name="rubric-holistic-select" value="${idx}" ${isSelected ? 'checked' : ''} 
+                                   onchange="window._rubricHolisticSelection=parseInt(this.value); window._updateHolisticTotal(); event.stopPropagation();" 
+                                   style="cursor: pointer; width: 14px; height: 14px;">
+                        </td>
+                    </tr>`;
                 });
-                
-                html += `<td style="border: 1px solid #000000; padding: 4px; text-align: center; vertical-align: middle;">
-                    <select id="factor-q-${q.id || idx}" onchange="window._rubricFactors['${q.id || idx}']=parseInt(this.value); window._updateRubricTotal();" style="font-size: 0.72rem; padding: 2px; border-radius: 4px; border: 1px solid #ccc; background: #fff; width: 52px; cursor: pointer;">
-                        <option value="1" ${factor===1?'selected':''}>x1</option>
-                        <option value="2" ${factor===2?'selected':''}>x2</option>
-                        <option value="3" ${factor===3?'selected':''}>x3</option>
-                    </select>
-                </td>`;
-                
-                const finalScoreStr = selectedPoints !== null ? `${selectedPoints * factor} / ${numLevels * factor}` : `0 / ${numLevels * factor}`;
-                html += `<td id="rubric-score-cell-${idx}" style="border: 1px solid #000000; padding: 8px; text-align: center; vertical-align: middle; font-weight: bold; color: #000;">${finalScoreStr}</td>`;
-                html += '</tr>';
-            });
 
-            html += '</tbody></table>';
-            html += `
-            <div id="rubric-summary-block" style="margin-top: 1rem; padding: 1rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; max-width: 320px; margin-left: auto;">
-                <h4 style="font-size: 0.85rem; font-weight: bold; margin-bottom: 0.5rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; color: #0f172a;">Resumen de Puntajes</h4>
-                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 4px; color: #334155;">
-                    <span>Puntaje Ideal Total:</span>
-                    <strong id="rubric-ideal-total-val">0 pts</strong>
+                html += '</tbody></table>';
+                html += `
+                <div id="rubric-summary-block" style="margin-top: 1rem; padding: 1rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; max-width: 320px; margin-left: auto;">
+                    <h4 style="font-size: 0.85rem; font-weight: bold; margin-bottom: 0.5rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; color: #0f172a;">Resumen de Puntajes</h4>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 4px; color: #334155;">
+                        <span>Puntaje Ideal Total:</span>
+                        <strong id="rubric-ideal-total-val">0 pts</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 4px; color: #334155;">
+                        <span>Puntaje Obtenido:</span>
+                        <strong id="rubric-obtenido-total-val">0 pts</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; border-top: 1px dashed #cbd5e1; padding-top: 4px; margin-top: 4px; color: #0f172a;">
+                        <span>Porcentaje de Logro:</span>
+                        <strong id="rubric-logro-porcentaje-val">0%</strong>
+                    </div>
                 </div>
-                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 4px; color: #334155;">
-                    <span>Puntaje Obtenido:</span>
-                    <strong id="rubric-obtenido-total-val">0 pts</strong>
-                </div>
-                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; border-top: 1px dashed #cbd5e1; padding-top: 4px; margin-top: 4px; color: #0f172a;">
-                    <span>Porcentaje de Logro:</span>
-                    <strong id="rubric-logro-porcentaje-val">0%</strong>
-                </div>
-            </div>
-            `;
+                `;
 
-            window._updateRubricTotal = function() {
-                let totalIdeal = 0;
-                let totalObtenido = 0;
-                
-                questions.forEach((q, idx) => {
-                    const factorSelect = document.getElementById(`factor-q-${q.id || idx}`);
-                    const qFactor = factorSelect ? parseInt(factorSelect.value) : ((window._rubricFactors && window._rubricFactors[q.id]) || q.factor || 1);
-                    const selectedPoints = window._rubricSelections[idx] !== undefined ? window._rubricSelections[idx] : 0;
+                window._updateHolisticTotal = function() {
+                    const maxPoints = sortedQuestions.length > 0 ? (parseInt(sortedQuestions[0].puntaje) || 0) : 0;
+                    const selectedIdx = window._rubricHolisticSelection;
+                    const obtainedPoints = selectedIdx !== null && selectedIdx >= 0 && selectedIdx < sortedQuestions.length 
+                        ? (parseInt(sortedQuestions[selectedIdx].puntaje) || 0) 
+                        : 0;
+
+                    const idealValEl = document.getElementById('rubric-ideal-total-val');
+                    const obtenidoValEl = document.getElementById('rubric-obtenido-total-val');
+                    const logroEl = document.getElementById('rubric-logro-porcentaje-val');
                     
-                    totalIdeal += numLevels * qFactor;
-                    totalObtenido += selectedPoints * qFactor;
+                    if (idealValEl) idealValEl.textContent = `${maxPoints} pts`;
+                    if (obtenidoValEl) obtenidoValEl.textContent = `${obtainedPoints} pts`;
                     
-                    const cell = document.getElementById(`rubric-score-cell-${idx}`);
-                    if (cell) {
-                        cell.textContent = `${selectedPoints > 0 ? selectedPoints * qFactor : 0} / ${numLevels * qFactor}`;
+                    const percentage = maxPoints > 0 ? Math.round((obtainedPoints / maxPoints) * 100) : 0;
+                    if (logroEl) logroEl.textContent = `${percentage}%`;
+                    
+                    if (previewTotalPoints) {
+                        previewTotalPoints.textContent = maxPoints;
                     }
+                };
+
+                setTimeout(() => {
+                    if (window._updateHolisticTotal) window._updateHolisticTotal();
+                }, 0);
+            } else {
+                // === RÚBRICA ANALÍTICA: criterio + niveles + columna Factor + Puntaje Final ===
+                const levels = questions[0].niveles ? Object.keys(questions[0].niveles) : [];
+                const numLevels = levels.length;
+                
+                html += '<table style="width: 100%; border-collapse: collapse; font-size: 0.75rem; text-align: left; border: 1px solid #000000; margin-bottom: 1.5rem;">';
+                html += '<thead style="background-color: #f1f5f9;"><tr>';
+                html += '<th style="border: 1px solid #000000; padding: 8px; color: #000; width: 15%;">Criterio</th>';
+                levels.forEach((lvl, lIdx) => {
+                    const pts = numLevels - lIdx;
+                    html += `<th style="border: 1px solid #000000; padding: 8px; color: #000;">${lvl}<br>(${pts} pts)</th>`;
                 });
-                
-                const idealValEl = document.getElementById('rubric-ideal-total-val');
-                const obtenidoValEl = document.getElementById('rubric-obtenido-total-val');
-                const logroEl = document.getElementById('rubric-logro-porcentaje-val');
-                
-                if (idealValEl) idealValEl.textContent = `${totalIdeal} pts`;
-                if (obtenidoValEl) obtenidoValEl.textContent = `${totalObtenido} pts`;
-                
-                const percentage = totalIdeal > 0 ? Math.round((totalObtenido / totalIdeal) * 100) : 0;
-                if (logroEl) logroEl.textContent = `${percentage}%`;
-                
-                if (previewTotalPoints) {
-                    previewTotalPoints.textContent = totalIdeal;
-                }
-            };
+                html += '<th style="border: 1px solid #000000; padding: 8px; color: #000; text-align: center; width: 8%;">Factor</th>';
+                html += '<th style="border: 1px solid #000000; padding: 8px; color: #000; text-align: center; width: 8%;">Puntaje Final</th>';
+                html += '</tr></thead><tbody>';
 
-            setTimeout(() => {
-                if (window._updateRubricTotal) window._updateRubricTotal();
-            }, 0);
+                window._rubricSelections = window._rubricSelections || {};
+                window._rubricFactors = window._rubricFactors || {};
 
-            html += '<p style="font-size: 0.7rem; color: #555; font-style: italic; text-align: center; margin-top: 10px;">💡 El Factor multiplica el puntaje de ese criterio para ponderar su importancia en la evaluación final.</p>';
+                questions.forEach((q, idx) => {
+                    html += `<tr><td style="border: 1px solid #000000; padding: 8px; font-weight: bold; color: #000; vertical-align: top; background: #fafafa;">${q.criterio}</td>`;
+                    
+                    const selectedPoints = window._rubricSelections[idx] !== undefined ? window._rubricSelections[idx] : null;
+                    const factor = window._rubricFactors[q.id || idx] !== undefined ? window._rubricFactors[q.id || idx] : (q.factor || 1);
+                    
+                    levels.forEach((lvl, lIdx) => {
+                        const pts = numLevels - lIdx;
+                        const desc = q.niveles[lvl] || '';
+                        const isChecked = selectedPoints === pts ? 'checked' : '';
+                        
+                        html += `
+                        <td style="border: 1px solid #000000; padding: 8px; color: #333; vertical-align: top; cursor: pointer;" 
+                            onclick="const rad = this.querySelector('input'); if(rad) { rad.checked = true; rad.dispatchEvent(new Event('change')); }">
+                            <div style="display: flex; align-items: flex-start; gap: 4px;">
+                                <input type="radio" name="rubric-row-${idx}" value="${pts}" ${isChecked} 
+                                       onchange="window._rubricSelections['${idx}']=parseInt(this.value); window._updateRubricTotal(); event.stopPropagation();" 
+                                       style="cursor: pointer; margin-top: 2px;">
+                                <span>${desc}</span>
+                            </div>
+                        </td>`;
+                    });
+                    
+                    html += `<td style="border: 1px solid #000000; padding: 4px; text-align: center; vertical-align: middle;">
+                        <select id="factor-q-${q.id || idx}" onchange="window._rubricFactors['${q.id || idx}']=parseInt(this.value); window._updateRubricTotal();" style="font-size: 0.72rem; padding: 2px; border-radius: 4px; border: 1px solid #ccc; background: #fff; width: 52px; cursor: pointer;">
+                            <option value="1" ${factor===1?'selected':''}>x1</option>
+                            <option value="2" ${factor===2?'selected':''}>x2</option>
+                            <option value="3" ${factor===3?'selected':''}>x3</option>
+                        </select>
+                    </td>`;
+                    
+                    const finalScoreStr = selectedPoints !== null ? `${selectedPoints * factor} / ${numLevels * factor}` : `0 / ${numLevels * factor}`;
+                    html += `<td id="rubric-score-cell-${idx}" style="border: 1px solid #000000; padding: 8px; text-align: center; vertical-align: middle; font-weight: bold; color: #000;">${finalScoreStr}</td>`;
+                    html += '</tr>';
+                });
+
+                html += '</tbody></table>';
+                html += `
+                <div id="rubric-summary-block" style="margin-top: 1rem; padding: 1rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; max-width: 320px; margin-left: auto;">
+                    <h4 style="font-size: 0.85rem; font-weight: bold; margin-bottom: 0.5rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; color: #0f172a;">Resumen de Puntajes</h4>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 4px; color: #334155;">
+                        <span>Puntaje Ideal Total:</span>
+                        <strong id="rubric-ideal-total-val">0 pts</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 4px; color: #334155;">
+                        <span>Puntaje Obtenido:</span>
+                        <strong id="rubric-obtenido-total-val">0 pts</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; border-top: 1px dashed #cbd5e1; padding-top: 4px; margin-top: 4px; color: #0f172a;">
+                        <span>Porcentaje de Logro:</span>
+                        <strong id="rubric-logro-porcentaje-val">0%</strong>
+                    </div>
+                </div>
+                `;
+
+                window._updateRubricTotal = function() {
+                    let totalIdeal = 0;
+                    let totalObtenido = 0;
+                    
+                    questions.forEach((q, idx) => {
+                        const factorSelect = document.getElementById(`factor-q-${q.id || idx}`);
+                        const qFactor = factorSelect ? parseInt(factorSelect.value) : ((window._rubricFactors && window._rubricFactors[q.id]) || q.factor || 1);
+                        const selectedPoints = window._rubricSelections[idx] !== undefined ? window._rubricSelections[idx] : 0;
+                        
+                        totalIdeal += numLevels * qFactor;
+                        totalObtenido += selectedPoints * qFactor;
+                        
+                        const cell = document.getElementById(`rubric-score-cell-${idx}`);
+                        if (cell) {
+                            cell.textContent = `${selectedPoints > 0 ? selectedPoints * qFactor : 0} / ${numLevels * qFactor}`;
+                        }
+                    });
+                    
+                    const idealValEl = document.getElementById('rubric-ideal-total-val');
+                    const obtenidoValEl = document.getElementById('rubric-obtenido-total-val');
+                    const logroEl = document.getElementById('rubric-logro-porcentaje-val');
+                    
+                    if (idealValEl) idealValEl.textContent = `${totalIdeal} pts`;
+                    if (obtenidoValEl) obtenidoValEl.textContent = `${totalObtenido} pts`;
+                    
+                    const percentage = totalIdeal > 0 ? Math.round((totalObtenido / totalIdeal) * 100) : 0;
+                    if (logroEl) logroEl.textContent = `${percentage}%`;
+                    
+                    if (previewTotalPoints) {
+                        previewTotalPoints.textContent = totalIdeal;
+                    }
+                };
+
+                setTimeout(() => {
+                    if (window._updateRubricTotal) window._updateRubricTotal();
+                }, 0);
+
+                html += '<p style="font-size: 0.7rem; color: #555; font-style: italic; text-align: center; margin-top: 10px;">💡 El Factor multiplica el puntaje de ese criterio para ponderar su importancia en la evaluación final.</p>';
+            }
         }
         
         previewQuestions.innerHTML = html;
@@ -1928,125 +2048,184 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
         let docQuestionsHTML = '';
         let docPautaHTML = '';
 
-        if (isRubric && questions.length > 0 && questions[0].type === 'rubric_row') {
+        if (isRubric && questions.length > 0 && (questions[0].type === 'rubric_row' || questions[0].type === 'rubric_row_holistic')) {
             const isEscalaExport = matrixValue === 'escala_apreciacion';
-            const levels = Object.keys(questions[0].niveles || {});
-            const numLevels = levels.length;
+            const isHolisticaExport = matrixValue === 'rubrica' && rubricType.value === 'holistica';
 
-            docQuestionsHTML += `
-                <div style="margin-top: 15px; margin-bottom: 10px; text-align: center;">
-                    <h3 style="font-size: 12pt; font-weight: bold; font-family: 'Arial', sans-serif; margin-bottom: 3px;">${matrixText}</h3>
-                    <h4 style="font-size: 10.5pt; font-weight: normal; font-family: 'Arial', sans-serif; margin: 0 0 15px 0;">Actividad a evaluar: ${evalActivity.options[evalActivity.selectedIndex].text}</h4>
-                </div>
-                <table style="width: 100%; border-collapse: collapse; font-size: 9.5pt; border: 1px solid #000000; font-family: 'Arial', sans-serif;" cellpadding="6">
-                    <thead>
-                        <tr style="background-color: #f3f4f6;">
-            `;
-
-            if (isEscalaExport) {
-                docQuestionsHTML += `
-                    <th style="border: 1px solid #000000; text-align: left; font-weight: bold; width: 15%; color: #000000;">Criterio</th>
-                    <th style="border: 1px solid #000000; text-align: left; font-weight: bold; width: 45%; color: #000000;">Criterio de evaluación / Indicadores</th>
-                    <th style="border: 1px solid #000000; text-align: center; font-weight: bold; width: 8%; color: #000000;">Logrado<br>(4 pts)</th>
-                    <th style="border: 1px solid #000000; text-align: center; font-weight: bold; width: 8%; color: #000000;">Med. logrado<br>(3 pts)</th>
-                    <th style="border: 1px solid #000000; text-align: center; font-weight: bold; width: 8%; color: #000000;">Por lograr<br>(2 pts)</th>
-                    <th style="border: 1px solid #000000; text-align: center; font-weight: bold; width: 8%; color: #000000;">No observado<br>(1 pt)</th>
-                    <th style="border: 1px solid #000000; text-align: center; font-weight: bold; width: 8%; color: #000000;">Multiplicador</th>
-                    <th style="border: 1px solid #000000; text-align: center; font-weight: bold; width: 8%; color: #000000;">Puntaje Final</th>
-                `;
-            } else {
-                docQuestionsHTML += `<th style="border: 1px solid #000000; text-align: left; font-weight: bold; width: 18%; color: #000000;">Criterio</th>`;
-                levels.forEach((lvl, lIdx) => {
-                    const pts = numLevels - lIdx;
-                    docQuestionsHTML += `<th style="border: 1px solid #000000; text-align: center; font-weight: bold; color: #000000;">${lvl}<br>(${pts} pts)</th>`;
+            if (isHolisticaExport) {
+                const sortedQuestions = [...questions].sort((a, b) => {
+                    const pA = parseInt(a.puntaje) || 0;
+                    const pB = parseInt(b.puntaje) || 0;
+                    return pB - pA;
                 });
-                docQuestionsHTML += `<th style="border: 1px solid #000000; text-align: center; font-weight: bold; color: #000000; width: 8%;">Factor</th>`;
-                docQuestionsHTML += `<th style="border: 1px solid #000000; text-align: center; font-weight: bold; color: #000000; width: 10%;">Puntaje Final</th>`;
-            }
+                totalIdealScore = sortedQuestions.length > 0 ? (parseInt(sortedQuestions[0].puntaje) || 0) : 0;
 
-            docQuestionsHTML += `
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
+                docQuestionsHTML += `
+                    <div style="margin-top: 15px; margin-bottom: 10px; text-align: center;">
+                        <h3 style="font-size: 12pt; font-weight: bold; font-family: 'Arial', sans-serif; margin-bottom: 3px;">${matrixText}</h3>
+                        <h4 style="font-size: 10.5pt; font-weight: normal; font-family: 'Arial', sans-serif; margin: 0 0 15px 0;">Actividad a evaluar: ${evalActivity.options[evalActivity.selectedIndex].text}</h4>
+                    </div>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 9.5pt; border: 1px solid #000000; font-family: 'Arial', sans-serif;" cellpadding="6">
+                        <thead>
+                            <tr style="background-color: #f3f4f6;">
+                                <th style="border: 1px solid #000000; text-align: center; font-weight: bold; width: 25%; color: #000000;">Escala / Nivel</th>
+                                <th style="border: 1px solid #000000; text-align: left; font-weight: bold; width: 60%; color: #000000;">Descripción del Desempeño</th>
+                                <th style="border: 1px solid #000000; text-align: center; font-weight: bold; width: 15%; color: #000000;">Selección</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
 
-            totalIdealScore = 0;
-
-            questions.forEach((q, qIdx) => {
-                if (isEscalaExport) {
-                    const indicators = q.indicadores || [q.criterio];
-                    const numRows = indicators.length;
-                    
-                    indicators.forEach((ind, indIdx) => {
-                        const rowKey = `${qIdx}-${indIdx}`;
-                        const mult = (window._escalaMultipliers && window._escalaMultipliers[rowKey]) || 1;
-                        totalIdealScore += 4 * mult;
-
-                        docQuestionsHTML += `<tr>`;
-                        if (indIdx === 0) {
-                            docQuestionsHTML += `<td rowspan="${numRows}" style="border: 1px solid #000000; font-weight: bold; vertical-align: top; color: #000000; background-color: #fafafa; font-size: 8.5pt; width: 15%;">${q.criterio || ''}</td>`;
-                        }
-                        docQuestionsHTML += `
-                            <td style="border: 1px solid #000000; vertical-align: top; color: #333333; font-size: 8.5pt; width: 45%;">${ind}</td>
-                            <td style="border: 1px solid #000000; text-align: center; vertical-align: middle; font-size: 13pt; width: 8%;">☐</td>
-                            <td style="border: 1px solid #000000; text-align: center; vertical-align: middle; font-size: 13pt; width: 8%;">☐</td>
-                            <td style="border: 1px solid #000000; text-align: center; vertical-align: middle; font-size: 13pt; width: 8%;">☐</td>
-                            <td style="border: 1px solid #000000; text-align: center; vertical-align: middle; font-size: 13pt; width: 8%;">☐</td>
-                            <td style="border: 1px solid #000000; text-align: center; vertical-align: middle; font-weight: bold; font-size: 9pt; width: 8%;">x${mult}</td>
-                            <td style="border: 1px solid #000000; text-align: center; vertical-align: middle; font-size: 9pt; color: #666666; width: 8%;">______ / ${4 * mult}</td>
-                        </tr>`;
-                    });
-                } else {
-                    const qKey = q.id !== undefined ? q.id : qIdx;
-                    const qFactor = (window._rubricFactors && window._rubricFactors[qKey] !== undefined) ? window._rubricFactors[qKey] : (q.factor || 1);
-                    totalIdealScore += numLevels * qFactor;
-                    
+                sortedQuestions.forEach((q, idx) => {
+                    const nivelText = q.nivel || `Nivel ${q.puntaje}`;
+                    const ptsText = q.puntaje !== undefined ? `(${q.puntaje} pts)` : '';
                     docQuestionsHTML += `
                         <tr>
-                            <td style="border: 1px solid #000000; font-weight: bold; vertical-align: top; color: #000000;">${q.criterio || ''}</td>
+                            <td style="border: 1px solid #000000; font-weight: bold; text-align: center; vertical-align: middle; color: #000000; background-color: #fafafa; font-size: 9pt; width: 25%;">
+                                ${nivelText}<br>${ptsText}
+                            </td>
+                            <td style="border: 1px solid #000000; vertical-align: top; color: #333333; font-size: 9pt; width: 60%;">
+                                ${q.descripcion || ''}
+                            </td>
+                            <td style="border: 1px solid #000000; text-align: center; vertical-align: middle; font-size: 13pt; width: 15%;">☐</td>
+                        </tr>
                     `;
-                    levels.forEach(lvl => {
-                        const desc = (q.niveles && q.niveles[lvl]) ? q.niveles[lvl] : '';
-                        docQuestionsHTML += `<td style="border: 1px solid #000000; vertical-align: top; font-size: 8.5pt; color: #333333;">${desc}</td>`;
-                    });
-                    docQuestionsHTML += `<td style="border: 1px solid #000000; text-align: center; font-weight: bold; color: #000000; font-size: 10pt;">x${qFactor}</td>`;
-                    docQuestionsHTML += `<td style="border: 1px solid #000000; text-align: center; vertical-align: middle; font-size: 9pt; color: #666666; width: 10%;">______ / ${numLevels * qFactor}</td>`;
-                    docQuestionsHTML += `</tr>`;
-                }
-            });
+                });
 
-            if (isEscalaExport) {
                 docQuestionsHTML += `
-                    <tr style="background-color: #f3f4f6; font-weight: bold;">
-                        <td colspan="2" style="border: 1px solid #000000; padding: 8px; text-align: right; font-size: 9.5pt; color: #000000;">TOTALES:</td>
-                        <td colspan="4" style="border: 1px solid #000000; padding: 8px; font-size: 8.5pt; color: #555555; font-style: italic;">Puntaje final = puntaje obtenido × multiplicador</td>
-                        <td style="border: 1px solid #000000; padding: 8px; text-align: center; font-size: 9.5pt; color: #000000;">Ideal:</td>
-                        <td style="border: 1px solid #000000; padding: 8px; text-align: center; font-size: 9.5pt; color: #000000;">______ / ${totalIdealScore} pts</td>
-                    </tr>
+                        <tr style="background-color: #f3f4f6; font-weight: bold;">
+                            <td style="border: 1px solid #000000; padding: 8px; text-align: right; font-size: 9.5pt; color: #000000;">TOTAL:</td>
+                            <td style="border: 1px solid #000000; padding: 8px; font-size: 8.5pt; color: #555555; font-style: italic;">Puntaje total correspondiente al nivel seleccionado.</td>
+                            <td style="border: 1px solid #000000; padding: 8px; text-align: center; font-size: 9.5pt; color: #000000;">______ / ${totalIdealScore} pts</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                `;
+
+                docPautaHTML = `
+                    <div style="font-family: 'Arial', sans-serif; font-size: 10pt; font-style: italic;">
+                        La pauta de corrección corresponde a la misma rúbrica holística detallada anteriormente.
+                    </div>
                 `;
             } else {
+                const levels = Object.keys(questions[0].niveles || {});
+                const numLevels = levels.length;
+
                 docQuestionsHTML += `
-                    <tr style="background-color: #f3f4f6; font-weight: bold;">
-                        <td style="border: 1px solid #000000; padding: 8px; font-size: 9.5pt; color: #000000;">TOTALES:</td>
-                        <td colspan="${numLevels}" style="border: 1px solid #000000; padding: 8px; font-size: 8.5pt; color: #555555; font-style: italic;">Puntaje total = suma de (puntaje nivel obtenido × factor)</td>
-                        <td style="border: 1px solid #000000; padding: 8px; text-align: center; font-size: 9.5pt; color: #000000;">Ideal:</td>
-                        <td style="border: 1px solid #000000; padding: 8px; text-align: center; font-size: 9.5pt; color: #000000;">______ / ${totalIdealScore} pts</td>
-                    </tr>
+                    <div style="margin-top: 15px; margin-bottom: 10px; text-align: center;">
+                        <h3 style="font-size: 12pt; font-weight: bold; font-family: 'Arial', sans-serif; margin-bottom: 3px;">${matrixText}</h3>
+                        <h4 style="font-size: 10.5pt; font-weight: normal; font-family: 'Arial', sans-serif; margin: 0 0 15px 0;">Actividad a evaluar: ${evalActivity.options[evalActivity.selectedIndex].text}</h4>
+                    </div>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 9.5pt; border: 1px solid #000000; font-family: 'Arial', sans-serif;" cellpadding="6">
+                        <thead>
+                            <tr style="background-color: #f3f4f6;">
+                `;
+
+                if (isEscalaExport) {
+                    docQuestionsHTML += `
+                        <th style="border: 1px solid #000000; text-align: left; font-weight: bold; width: 15%; color: #000000;">Criterio</th>
+                        <th style="border: 1px solid #000000; text-align: left; font-weight: bold; width: 45%; color: #000000;">Criterio de evaluación / Indicadores</th>
+                        <th style="border: 1px solid #000000; text-align: center; font-weight: bold; width: 8%; color: #000000;">Logrado<br>(4 pts)</th>
+                        <th style="border: 1px solid #000000; text-align: center; font-weight: bold; width: 8%; color: #000000;">Med. logrado<br>(3 pts)</th>
+                        <th style="border: 1px solid #000000; text-align: center; font-weight: bold; width: 8%; color: #000000;">Por lograr<br>(2 pts)</th>
+                        <th style="border: 1px solid #000000; text-align: center; font-weight: bold; width: 8%; color: #000000;">No observado<br>(1 pt)</th>
+                        <th style="border: 1px solid #000000; text-align: center; font-weight: bold; width: 8%; color: #000000;">Multiplicador</th>
+                        <th style="border: 1px solid #000000; text-align: center; font-weight: bold; width: 8%; color: #000000;">Puntaje Final</th>
+                    `;
+                } else {
+                    docQuestionsHTML += `<th style="border: 1px solid #000000; text-align: left; font-weight: bold; width: 18%; color: #000000;">Criterio</th>`;
+                    levels.forEach((lvl, lIdx) => {
+                        const pts = numLevels - lIdx;
+                        docQuestionsHTML += `<th style="border: 1px solid #000000; text-align: center; font-weight: bold; color: #000000;">${lvl}<br>(${pts} pts)</th>`;
+                    });
+                    docQuestionsHTML += `<th style="border: 1px solid #000000; text-align: center; font-weight: bold; color: #000000; width: 8%;">Factor</th>`;
+                    docQuestionsHTML += `<th style="border: 1px solid #000000; text-align: center; font-weight: bold; color: #000000; width: 10%;">Puntaje Final</th>`;
+                }
+
+                docQuestionsHTML += `
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                totalIdealScore = 0;
+
+                questions.forEach((q, qIdx) => {
+                    if (isEscalaExport) {
+                        const indicators = q.indicadores || [q.criterio];
+                        const numRows = indicators.length;
+                        
+                        indicators.forEach((ind, indIdx) => {
+                            const rowKey = `${qIdx}-${indIdx}`;
+                            const mult = (window._escalaMultipliers && window._escalaMultipliers[rowKey]) || 1;
+                            totalIdealScore += 4 * mult;
+
+                            docQuestionsHTML += `<tr>`;
+                            if (indIdx === 0) {
+                                docQuestionsHTML += `<td rowspan="${numRows}" style="border: 1px solid #000000; font-weight: bold; vertical-align: top; color: #000000; background-color: #fafafa; font-size: 8.5pt; width: 15%;">${q.criterio || ''}</td>`;
+                            }
+                            docQuestionsHTML += `
+                                <td style="border: 1px solid #000000; vertical-align: top; color: #333333; font-size: 8.5pt; width: 45%;">${ind}</td>
+                                <td style="border: 1px solid #000000; text-align: center; vertical-align: middle; font-size: 13pt; width: 8%;">☐</td>
+                                <td style="border: 1px solid #000000; text-align: center; vertical-align: middle; font-size: 13pt; width: 8%;">☐</td>
+                                <td style="border: 1px solid #000000; text-align: center; vertical-align: middle; font-size: 13pt; width: 8%;">☐</td>
+                                <td style="border: 1px solid #000000; text-align: center; vertical-align: middle; font-size: 13pt; width: 8%;">☐</td>
+                                <td style="border: 1px solid #000000; text-align: center; vertical-align: middle; font-weight: bold; font-size: 9pt; width: 8%;">x${mult}</td>
+                                <td style="border: 1px solid #000000; text-align: center; vertical-align: middle; font-size: 9pt; color: #666666; width: 8%;">______ / ${4 * mult}</td>
+                            </tr>`;
+                        });
+                    } else {
+                        const qKey = q.id !== undefined ? q.id : qIdx;
+                        const qFactor = (window._rubricFactors && window._rubricFactors[qKey] !== undefined) ? window._rubricFactors[qKey] : (q.factor || 1);
+                        totalIdealScore += numLevels * qFactor;
+                        
+                        docQuestionsHTML += `
+                            <tr>
+                                <td style="border: 1px solid #000000; font-weight: bold; vertical-align: top; color: #000000;">${q.criterio || ''}</td>
+                        `;
+                        levels.forEach(lvl => {
+                            const desc = (q.niveles && q.niveles[lvl]) ? q.niveles[lvl] : '';
+                            docQuestionsHTML += `<td style="border: 1px solid #000000; vertical-align: top; font-size: 8.5pt; color: #333333;">${desc}</td>`;
+                        });
+                        docQuestionsHTML += `<td style="border: 1px solid #000000; text-align: center; font-weight: bold; color: #000000; font-size: 10pt;">x${qFactor}</td>`;
+                        docQuestionsHTML += `<td style="border: 1px solid #000000; text-align: center; vertical-align: middle; font-size: 9pt; color: #666666; width: 10%;">______ / ${numLevels * qFactor}</td>`;
+                        docQuestionsHTML += `</tr>`;
+                    }
+                });
+
+                if (isEscalaExport) {
+                    docQuestionsHTML += `
+                        <tr style="background-color: #f3f4f6; font-weight: bold;">
+                            <td colspan="2" style="border: 1px solid #000000; padding: 8px; text-align: right; font-size: 9.5pt; color: #000000;">TOTALES:</td>
+                            <td colspan="4" style="border: 1px solid #000000; padding: 8px; font-size: 8.5pt; color: #555555; font-style: italic;">Puntaje final = puntaje obtenido × multiplicador</td>
+                            <td style="border: 1px solid #000000; padding: 8px; text-align: center; font-size: 9.5pt; color: #000000;">Ideal:</td>
+                            <td style="border: 1px solid #000000; padding: 8px; text-align: center; font-size: 9.5pt; color: #000000;">______ / ${totalIdealScore} pts</td>
+                        </tr>
+                    `;
+                } else {
+                    docQuestionsHTML += `
+                        <tr style="background-color: #f3f4f6; font-weight: bold;">
+                            <td style="border: 1px solid #000000; padding: 8px; font-size: 9.5pt; color: #000000;">TOTALES:</td>
+                            <td colspan="${numLevels}" style="border: 1px solid #000000; padding: 8px; font-size: 8.5pt; color: #555555; font-style: italic;">Puntaje total = suma de (puntaje nivel obtenido × factor)</td>
+                            <td style="border: 1px solid #000000; padding: 8px; text-align: center; font-size: 9.5pt; color: #000000;">Ideal:</td>
+                            <td style="border: 1px solid #000000; padding: 8px; text-align: center; font-size: 9.5pt; color: #000000;">______ / ${totalIdealScore} pts</td>
+                        </tr>
+                    `;
+                }
+
+                docQuestionsHTML += `
+                        </tbody>
+                    </table>
+                `;
+                if (!isEscalaExport) {
+                    docQuestionsHTML += `<p style="font-family: 'Arial', sans-serif; font-size: 8.5pt; color: #55; font-style: italic; text-align: center; margin-top: 6px;">* El Factor (x1, x2, x3) multiplica el puntaje del criterio para ponderar su importancia en la evaluación final.</p>`;
+                }
+                docPautaHTML = `
+                    <div style="font-family: 'Arial', sans-serif; font-size: 10pt; font-style: italic;">
+                        La pauta de corrección corresponde a la misma rúbrica/escala detallada anteriormente.
+                    </div>
                 `;
             }
-
-            docQuestionsHTML += `
-                    </tbody>
-                </table>
-            `;
-            if (!isEscalaExport) {
-                docQuestionsHTML += `<p style="font-family: 'Arial', sans-serif; font-size: 8.5pt; color: #555; font-style: italic; text-align: center; margin-top: 6px;">* El Factor (x1, x2, x3) multiplica el puntaje del criterio para ponderar su importancia en la evaluación final.</p>`;
-            }
-            docPautaHTML = `
-                <div style="font-family: 'Arial', sans-serif; font-size: 10pt; font-style: italic;">
-                    La pauta de corrección corresponde a la misma rúbrica/escala detallada anteriormente.
-                </div>
-            `;
         } else {
             const grouped = {
                 'verdadero_falso': [],
@@ -2395,13 +2574,13 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
         </html>
         `;
 
-        // 5. Download file as .doc (compatible with MS Word)
+        // 5. Download file as .docx (compatible with MS Word)
         const blob = new Blob(['\ufeff' + htmlDoc], {
-            type: 'application/msword;charset=utf-8'
+            type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document;charset=utf-8'
         });
         const url = URL.createObjectURL(blob);
         
-        const filename = `evaluacion_${currentSubject.toLowerCase()}_${evalLevel.value.replace(/\s+/g, '_')}.doc`;
+        const filename = `evaluacion_${currentSubject.toLowerCase()}_${evalLevel.value.replace(/\s+/g, '_')}.docx`;
         
         const a = document.createElement('a');
         a.href = url;
