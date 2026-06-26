@@ -81,68 +81,96 @@
         </div>
 
         <div class="pricing-grid">
-            <!-- Pack Básico -->
+            <!-- Pack Prueba -->
             <div class="pricing-card">
-                <div class="pack-name">Pack Básico</div>
-                <div class="pack-price">$3.990<span> CLP</span></div>
-                <div class="pack-credits">10 Descargables</div>
+                <div class="pack-name">Pack Prueba</div>
+                <div class="pack-price">$2.990<span> CLP</span></div>
+                <div class="pack-credits">5 Créditos</div>
+                <ul class="pack-features">
+                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Ideal para probar la plataforma</li>
+                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Descarga en Word (.doc)</li>
+                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Sin fecha de expiración</li>
+                </ul>
+                <button class="btn-buy btn-buy-outline" onclick="openModal('Pack Prueba', 5, 2990, 1)">Comprar pack</button>
+            </div>
+
+            <!-- Pack Inicio -->
+            <div class="pricing-card">
+                <div class="pack-name">Pack Inicio</div>
+                <div class="pack-price">$4.990<span> CLP</span></div>
+                <div class="pack-credits">10 Créditos</div>
                 <ul class="pack-features">
                     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Ideal para comenzar</li>
-                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Descarga en Word</li>
+                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Descarga en Word (.doc)</li>
                     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Sin fecha de expiración</li>
                 </ul>
-                <button class="btn-buy btn-buy-outline" onclick="openModal('Pack Básico', 10, 3990, 1)">Comprar pack</button>
+                <button class="btn-buy btn-buy-outline" onclick="openModal('Pack Inicio', 10, 4990, 2)">Comprar pack</button>
             </div>
 
-            <!-- Pack Estándar -->
+            <!-- Pack Docente -->
             <div class="pricing-card">
-                <div class="pack-name">Pack Estándar</div>
-                <div class="pack-price">$7.990<span> CLP</span></div>
-                <div class="pack-credits">25 Descargables</div>
+                <div class="pack-name">Pack Docente</div>
+                <div class="pack-price">$6.990<span> CLP</span></div>
+                <div class="pack-credits">15 Créditos</div>
                 <ul class="pack-features">
-                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Para uso moderado</li>
-                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Descarga en Word</li>
+                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Pensado para docentes activos</li>
+                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Descarga en Word (.doc)</li>
                     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Sin fecha de expiración</li>
                 </ul>
-                <button class="btn-buy btn-buy-outline" onclick="openModal('Pack Estándar', 25, 7990, 2)">Comprar pack</button>
+                <button class="btn-buy btn-buy-outline" onclick="openModal('Pack Docente', 15, 6990, 3)">Comprar pack</button>
             </div>
 
-            <!-- Pack Plus (Popular) -->
+            <!-- Pack Aula -->
+            <div class="pricing-card">
+                <div class="pack-name">Pack Aula</div>
+                <div class="pack-price">$11.990<span> CLP</span></div>
+                <div class="pack-credits">30 Créditos</div>
+                <ul class="pack-features">
+                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Uso frecuente para tu curso</li>
+                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Descarga en Word (.doc)</li>
+                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Sin fecha de expiración</li>
+                </ul>
+                <button class="btn-buy btn-buy-outline" onclick="openModal('Pack Aula', 30, 11990, 4)">Comprar pack</button>
+            </div>
+
+            <!-- Pack Pro (Popular) -->
             <div class="pricing-card popular">
                 <div class="popular-badge">Recomendado</div>
-                <div class="pack-name">Pack Plus</div>
-                <div class="pack-price">$14.990<span> CLP</span></div>
-                <div class="pack-credits">60 Descargables</div>
+                <div class="pack-name">Pack Pro</div>
+                <div class="pack-price">$17.990<span> CLP</span></div>
+                <div class="pack-credits">50 Créditos</div>
                 <ul class="pack-features">
-                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Mayor ahorro</li>
-                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Descarga en Word</li>
+                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Para un uso avanzado</li>
+                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Descarga en Word (.doc)</li>
                     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Mejor valor por crédito</li>
                 </ul>
-                <button class="btn-buy btn-buy-primary" onclick="openModal('Pack Plus', 60, 14990, 3)">Comprar pack</button>
+                <button class="btn-buy btn-buy-primary" onclick="openModal('Pack Pro', 50, 17990, 5)">Comprar pack</button>
             </div>
 
-            <!-- Pack Premium -->
+            <!-- Pack UTP -->
             <div class="pricing-card">
-                <div class="pack-name">Pack Premium</div>
-                <div class="pack-price">$22.990<span> CLP</span></div>
-                <div class="pack-credits">100 Descargables</div>
+                <div class="pack-name">Pack UTP</div>
+                <div class="pack-price">$29.990<span> CLP</span></div>
+                <div class="pack-credits">100 Créditos</div>
                 <ul class="pack-features">
-                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Para usuarios frecuentes</li>
-                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Ideal uso constante</li>
+                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Para coordinadores y jefes UTP</li>
+                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Mayor ahorro por volumen</li>
+                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Sin fecha de expiración</li>
                 </ul>
-                <button class="btn-buy btn-buy-outline" onclick="openModal('Pack Premium', 100, 22990, 4)">Comprar pack</button>
+                <button class="btn-buy btn-buy-outline" onclick="openModal('Pack UTP', 100, 29990, 6)">Comprar pack</button>
             </div>
 
             <!-- Pack Institucional -->
             <div class="pricing-card">
                 <div class="pack-name">Pack Institucional</div>
-                <div class="pack-price">$59.990<span> CLP</span></div>
-                <div class="pack-credits">300 Descargables</div>
+                <div class="pack-price">$49.990<span> CLP</span></div>
+                <div class="pack-credits">200 Créditos</div>
                 <ul class="pack-features">
-                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Para todo el colegio</li>
-                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Ideal para equipos</li>
+                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Para uso de todo el colegio</li>
+                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> El mejor precio por crédito</li>
+                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Sin fecha de expiración</li>
                 </ul>
-                <button class="btn-buy btn-buy-outline" onclick="openModal('Pack Institucional', 300, 59990, 5)">Comprar pack</button>
+                <button class="btn-buy btn-buy-outline" onclick="openModal('Pack Institucional', 200, 49990, 7)">Comprar pack</button>
             </div>
         </div>
     </div>

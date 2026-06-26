@@ -79,11 +79,13 @@ CREATE TABLE packs_creditos (
 );
 
 INSERT INTO packs_creditos (nombre_pack, cantidad_creditos, precio, descripcion) VALUES
-('Pack Básico', 10, 3990, 'Ideal para comenzar.'),
-('Pack Estándar', 25, 7990, 'Para uso moderado.'),
-('Pack Plus', 60, 14990, 'Mayor ahorro.'),
-('Pack Premium', 100, 22990, 'Para usuarios frecuentes.'),
-('Pack Institucional', 300, 59990, 'Para todo el colegio.');
+('Pack Prueba', 5, 2990, 'Ideal para probar la plataforma.'),
+('Pack Inicio', 10, 4990, 'Ideal para comenzar.'),
+('Pack Docente', 15, 6990, 'Pensado para docentes activos.'),
+('Pack Aula', 30, 11990, 'Uso frecuente para tu curso.'),
+('Pack Pro', 50, 17990, 'Para un uso avanzado.'),
+('Pack UTP', 100, 29990, 'Para coordinadores y jefes de UTP.'),
+('Pack Institucional', 200, 49990, 'Para uso de todo el colegio.');
 
 -- RLS: Todos pueden ver los packs, solo admin puede modificar
 ALTER TABLE packs_creditos ENABLE ROW LEVEL SECURITY;

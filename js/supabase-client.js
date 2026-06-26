@@ -52,6 +52,17 @@ if (isMockMode) {
     if (!safeLocalStorage.getItem('db_documentos_generados')) {
         safeLocalStorage.setItem('db_documentos_generados', JSON.stringify([]));
     }
+    if (!safeLocalStorage.getItem('db_packs_creditos')) {
+        safeLocalStorage.setItem('db_packs_creditos', JSON.stringify([
+            { id_pack: 1, nombre_pack: 'Pack Prueba', cantidad_creditos: 5, precio: 2990 },
+            { id_pack: 2, nombre_pack: 'Pack Inicio', cantidad_creditos: 10, precio: 4990 },
+            { id_pack: 3, nombre_pack: 'Pack Docente', cantidad_creditos: 15, precio: 6990 },
+            { id_pack: 4, nombre_pack: 'Pack Aula', cantidad_creditos: 30, precio: 11990 },
+            { id_pack: 5, nombre_pack: 'Pack Pro', cantidad_creditos: 50, precio: 17990 },
+            { id_pack: 6, nombre_pack: 'Pack UTP', cantidad_creditos: 100, precio: 29990 },
+            { id_pack: 7, nombre_pack: 'Pack Institucional', cantidad_creditos: 200, precio: 49990 }
+        ]));
+    }
 
     class MockSupabaseQueryBuilder {
         constructor(table) {
@@ -186,12 +197,14 @@ if (isMockMode) {
                 const perfiles = JSON.parse(safeLocalStorage.getItem('db_perfiles') || '[]');
                 filtered = filtered.map(compra => {
                     const perfil = perfiles.find(p => p.id === compra.id_usuario);
-                    let nombrePack = 'Pack Básico';
-                    let cantidadCreditos = 10;
-                    if (compra.id_pack === 2) { nombrePack = 'Pack Estándar'; cantidadCreditos = 25; }
-                    else if (compra.id_pack === 3) { nombrePack = 'Pack Plus'; cantidadCreditos = 60; }
-                    else if (compra.id_pack === 4) { nombrePack = 'Pack Premium'; cantidadCreditos = 100; }
-                    else if (compra.id_pack === 5) { nombrePack = 'Pack Institucional'; cantidadCreditos = 300; }
+                    let nombrePack = 'Pack Prueba';
+                    let cantidadCreditos = 5;
+                    if (compra.id_pack === 2) { nombrePack = 'Pack Inicio'; cantidadCreditos = 10; }
+                    else if (compra.id_pack === 3) { nombrePack = 'Pack Docente'; cantidadCreditos = 15; }
+                    else if (compra.id_pack === 4) { nombrePack = 'Pack Aula'; cantidadCreditos = 30; }
+                    else if (compra.id_pack === 5) { nombrePack = 'Pack Pro'; cantidadCreditos = 50; }
+                    else if (compra.id_pack === 6) { nombrePack = 'Pack UTP'; cantidadCreditos = 100; }
+                    else if (compra.id_pack === 7) { nombrePack = 'Pack Institucional'; cantidadCreditos = 200; }
                     
                     return {
                         ...compra,
