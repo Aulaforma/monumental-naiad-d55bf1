@@ -2261,6 +2261,7 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
                                 <p style="margin: 2px 0;"><strong>Establecimiento:</strong> ${evalInstitucion.value.trim() || '_________________________'}</p>
                                 <p style="margin: 2px 0;"><strong>Docente:</strong> ${evalDocente.value.trim() || '_________________________'}</p>
                                 <p style="margin: 2px 0;"><strong>Departamento:</strong> ${evalDepto.value.trim() || '_________________________'}</p>
+                                <p style="margin: 2px 0;"><strong>Puntaje Total:</strong> ${isRubric ? totalIdealScore : (previewTotalPoints.textContent === '-' ? '____' : previewTotalPoints.textContent)} pts</p>
                             </td>
                         </tr>
                     </table>
