@@ -634,7 +634,10 @@ app.post('/api/upload-materia', upload.single('materia'), async (req, res) => {
             }
         } catch (dbErr) {
             console.error("Error validando créditos:", dbErr);
-            return res.status(500).json({ error: 'Error interno validando créditos.' });
+            return res.status(500).json({ 
+                error: 'Error interno validando créditos.',
+                details: dbErr.message
+            });
         }
 
         // 1. Extract text
@@ -669,7 +672,10 @@ app.post('/api/upload-materia', upload.single('materia'), async (req, res) => {
 
     } catch (err) {
         console.error('Error en /api/upload-materia:', err);
-        res.status(500).json({ error: 'Ocurrió un error al procesar el archivo o llamar a la IA.' });
+        res.status(500).json({ 
+            error: 'Ocurrió un error al procesar el archivo o llamar a la IA.',
+            details: err.message 
+        });
     }
 });
 
@@ -695,7 +701,10 @@ app.post('/api/regenerate-item', upload.single('materia'), async (req, res) => {
         });
     } catch (err) {
         console.error('Error en /api/regenerate-item:', err);
-        res.status(500).json({ error: 'Error al regenerar la pregunta.' });
+        res.status(500).json({ 
+            error: 'Error al regenerar la pregunta.',
+            details: err.message 
+        });
     }
 });
 
