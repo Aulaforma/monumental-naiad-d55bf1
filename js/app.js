@@ -2586,10 +2586,24 @@ La IA simulada leyó el documento "${docName}" y generó una nueva pregunta de t
         </html>
         `;
 
-        // 5. Download file as .docx (compatible with MS Word)
-        const blob = new Blob(['\ufeff' + htmlDoc], {
-            type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document;charset=utf-8'
-        });
+        // 5. Convert HTML to true .docx using html-docx-js to avoid unreadable content warnings in MS Word
+        let blob;
+        if (window.htmlDocx) {
+            try {
+                blob = window.htmlDocx.asBlob(htmlDoc, {
+                    orientation: pageOrientation
+                });
+            } catch (convErr) {
+                console.error('Error al convertir HTML a docx con biblioteca:', convErr);
+                blob = new Blob(['\ufeff' + htmlDoc], {
+                    type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document;charset=utf-8'
+                });
+            }
+        } else {
+            blob = new Blob(['\ufeff' + htmlDoc], {
+                type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document;charset=utf-8'
+            });
+        }
         const url = URL.createObjectURL(blob);
         
         const filename = `evaluacion_${currentSubject.toLowerCase()}_${evalLevel.value.replace(/\s+/g, '_')}.docx`;
