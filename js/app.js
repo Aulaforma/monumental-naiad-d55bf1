@@ -599,18 +599,25 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (!response.ok) {
-                if(response.status === 402) {
-                    throw new Error('Créditos insuficientes.');
+                if (response.status === 402) {
+                    alert('Créditos insuficientes. Compra un pack para seguir generando documentos.');
+                    window.location.href = 'precios.html';
+                    return;
                 }
-                throw new Error('Error de conexión');
+                const errData = await response.json().catch(() => ({}));
+                const errMsg = errData.error || 'Error de conexión';
+                const errDetails = errData.details ? `\nDetalles: ${errData.details}` : '';
+                alert(`Error al generar con IA: ${errMsg}${errDetails}`);
+                return;
             }
 
             const data = await response.json();
             if (data.success && data.questions) {
                 loadQuestionsIntoState(data.questions);
-                alert(`[Servidor Local] ¡Evaluación generada con éxito! Se procesó "${file.name}" y la IA recomendó ${questions.length} preguntas distribuidas por tipos.`);
+                alert(`¡Evaluación generada con éxito! Se procesó "${file.name}" y la IA recomendó ${questions.length} preguntas distribuidas por tipos.`);
             } else {
-                throw new Error('Fallo de estructura');
+                alert('La respuesta del servidor no tiene el formato esperado.');
+                return;
             }
 
         } catch (error) {
@@ -805,7 +812,11 @@ Usando el contenido simulado del archivo "${file.name}".`);
                 body: formData
             });
 
-            if (!response.ok) throw new Error('Error al conectar');
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                alert(`Error al regenerar con IA: ${errData.error || 'Error en el servidor.'}`);
+                return;
+            }
 
             const data = await response.json();
             if (data.success && data.question) {
@@ -817,9 +828,10 @@ Usando el contenido simulado del archivo "${file.name}".`);
                 if (newQ.matchingPairs) q.matchingPairs = newQ.matchingPairs.map(p => ({ ...p }));
                 
                 renderQuestions();
-                alert(`[Servidor Local] Ítem ${qIndex + 1} regenerado con IA enfocándose en "${topicVal}".`);
+                alert(`Ítem ${qIndex + 1} regenerado con IA enfocándose en "${topicVal}".`);
             } else {
-                throw new Error('Estructura incorrecta');
+                alert('La respuesta de regeneración no tiene el formato esperado.');
+                return;
             }
 
         } catch (error) {

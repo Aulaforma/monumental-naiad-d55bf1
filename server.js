@@ -201,8 +201,8 @@ Devuelve ÚNICAMENTE un array JSON (sin markdown, sin bloques de código) con el
         const cleanJson = content.replace(/^```json/, '').replace(/```$/, '').trim();
         return JSON.parse(cleanJson);
     } catch (err) {
-        console.error('Error llamando a la API de OpenAI, cayendo a simulación:', err);
-        return generateMockQuestionsBatch(text, subject, level, activityType, matrixType, quantities, generalInstruction, rubricType, rubricLevels, rubricCriteria, escalaDescriptoresCount);
+        console.error('Error llamando a la API de OpenAI:', err);
+        throw err;
     }
 }
 
@@ -263,7 +263,7 @@ Devuelve ÚNICAMENTE un objeto JSON (sin markdown, sin bloques de código) con e
         return JSON.parse(cleanJson);
     } catch (err) {
         console.error('Error llamando a la API de OpenAI para regenerar:', err);
-        return generateSingleMockQuestion(subject, type, topic);
+        throw err;
     }
 }
 
