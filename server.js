@@ -63,24 +63,26 @@ Niveles de Desempeño: "${rubricLevels}"
 Número de descriptores/indicadores por criterio: ${numDescriptores}
 
 Formato de salida requerido:
-Devuelve ÚNICAMENTE un array JSON (sin markdown, sin bloques de código). Cada objeto representa un criterio a evaluar.
+Devuelve ÚNICAMENTE un objeto JSON con una propiedad "items" que contenga el array de criterios. Cada objeto representa un criterio a evaluar.
 Cada criterio debe tener:
 - "criterio": nombre del criterio
 - "niveles": objeto con los niveles de desempeño (las claves deben coincidir EXACTAMENTE con los provistos en "Niveles de Desempeño")
 - "indicadores": array de exactamente ${numDescriptores} strings. Cada uno es un indicador observable y concreto (ej: "Menciona al menos 2 fechas importantes", "Explica correctamente las causas del evento").
 
 Ejemplo de esquema:
-[
-  {
-    "criterio": "Contenido",
-    "niveles": {
-      "Logrado": "",
-      "Medianamente Logrado": "",
-      "No Logrado": ""
-    },
-    "indicadores": ["Indicador observable 1", "Indicador observable 2", "Indicador observable 3"]
-  }
-]`;
+{
+  "items": [
+    {
+      "criterio": "Contenido",
+      "niveles": {
+        "Logrado": "",
+        "Medianamente Logrado": "",
+        "No Logrado": ""
+      },
+      "indicadores": ["Indicador observable 1", "Indicador observable 2", "Indicador observable 3"]
+    }
+  ]
+}`;
             } else if (rubricType === 'holistica') {
                 systemPrompt = `Eres un diseñador instruccional experto y docente de educación en Chile.
 Tu tarea es leer la materia entregada y crear una Rúbrica Holística (Evaluación Global) para evaluar la siguiente actividad: ${activityType}.
@@ -92,27 +94,29 @@ Instrucción del Docente: "${generalInstruction || 'Ninguna'}"
 Niveles de Desempeño a utilizar: "${rubricLevels}"
 
 Formato de salida requerido:
-Devuelve ÚNICAMENTE un array JSON (sin markdown, sin bloques de código). Cada objeto representa un nivel de desempeño de la escala con:
+Devuelve ÚNICAMENTE un objeto JSON con una propiedad "items" que contenga el array de niveles de desempeño. Cada objeto representa un nivel de desempeño de la escala con:
 - "nivel": nombre del nivel o escala (deben coincidir EXACTAMENTE con los provistos en "Niveles de Desempeño a utilizar", o ser ordenados de mayor a menor puntaje)
 - "puntaje": el puntaje correspondiente a este nivel (número entero, ej: si hay 4 niveles, el máximo es 4 y el mínimo es 1; o si son números del 0 al 5, usar ese número directamente)
 - "descripcion": la descripción global y detallada de lo que el estudiante debe lograr para obtener este nivel en la actividad.
 - "type": "rubric_row_holistic"
 
 Ejemplo de esquema exacto:
-[
-  {
-    "nivel": "Excelente",
-    "puntaje": 4,
-    "descripcion": "Descripción detallada del desempeño global excelente...",
-    "type": "rubric_row_holistic"
-  },
-  {
-    "nivel": "Bueno",
-    "puntaje": 3,
-    "descripcion": "Descripción detallada del desempeño global bueno...",
-    "type": "rubric_row_holistic"
-  }
-]`;
+{
+  "items": [
+    {
+      "nivel": "Excelente",
+      "puntaje": 4,
+      "descripcion": "Descripción detallada del desempeño global excelente...",
+      "type": "rubric_row_holistic"
+    },
+    {
+      "nivel": "Bueno",
+      "puntaje": 3,
+      "descripcion": "Descripción detallada del desempeño global bueno...",
+      "type": "rubric_row_holistic"
+    }
+  ]
+}`;
             } else {
                 systemPrompt = `Eres un diseñador instruccional experto y docente de educación en Chile.
 Tu tarea es leer la materia entregada y crear una Rúbrica para evaluar la siguiente actividad: ${activityType}.
@@ -125,24 +129,26 @@ Criterios Sugeridos: "${rubricCriteria || 'Define los criterios más apropiados 
 Niveles de Desempeño: "${rubricLevels}"
 
 Formato de salida requerido:
-Devuelve ÚNICAMENTE un array JSON (sin markdown, sin bloques de código). Cada objeto representa un criterio a evaluar con:
+Devuelve ÚNICAMENTE un objeto JSON con una propiedad "items" que contenga el array de criterios. Cada objeto representa un criterio a evaluar con:
 - "criterio": nombre del criterio
 - "niveles": objeto donde cada clave es un nivel y el valor es el descriptor detallado (las claves deben coincidir EXACTAMENTE con los provistos en "Niveles de Desempeño")
 - "factor": número entero 1 (valor por defecto; el docente podrá cambiarlo a 2 o 3 en la interfaz)
 
 Ejemplo de esquema exacto:
-[
-  {
-    "criterio": "Contenido",
-    "niveles": {
-      "Excelente": "Descriptor detallado...",
-      "Bueno": "Descriptor detallado...",
-      "En proceso": "Descriptor detallado...",
-      "Insuficiente": "Descriptor detallado..."
-    },
-    "factor": 1
-  }
-]`;
+{
+  "items": [
+    {
+      "criterio": "Contenido",
+      "niveles": {
+        "Excelente": "Descriptor detallado...",
+        "Bueno": "Descriptor detallado...",
+        "En proceso": "Descriptor detallado...",
+        "Insuficiente": "Descriptor detallado..."
+      },
+      "factor": 1
+    }
+  ]
+}`;
             }
         } else {
             const qTypesDesc = Object.entries(quantities)
@@ -170,22 +176,24 @@ Tipos válidos a generar:
 - "completacion": Oraciones con guiones bajos (___).
 
 Formato de salida requerido:
-Devuelve ÚNICAMENTE un array JSON (sin markdown, sin bloques de código) con el siguiente esquema exacto:
-[
-  {
-    "type": "abierta | alternativas | verdadero_falso | pareados | completacion",
-    "text": "Texto completo de la pregunta",
-    "points": 2,
-    "correctAnswer": "Para abierta: la respuesta esperada o criterios de corrección. Para alternativas: 'A', 'B', 'C' o 'D'. Para verdadero_falso: 'V' o 'F'. Para completacion: la palabra o palabras correctas (separadas por comas si son varias). Para pareados: dejar vacío o no incluir.",
-    "options": ["A", "B", "C", "D"], // Solo para tipo alternativas. De lo contrario, omitir.
-    "justify": true, // Solo para tipo verdadero_falso. De lo contrario, omitir.
-    "matchingPairs": [ // Solo para tipo pareados. Exactamente 3 pares. De lo contrario, omitir.
-      {"colA": "Concepto 1", "colB": "Definición 1"},
-      {"colA": "Concepto 2", "colB": "Definición 2"},
-      {"colA": "Concepto 3", "colB": "Definición 3"}
-    ]
-  }
-]`;
+Devuelve ÚNICAMENTE un objeto JSON con una propiedad "items" que contenga el array de preguntas con el siguiente esquema exacto:
+{
+  "items": [
+    {
+      "type": "abierta | alternativas | verdadero_falso | pareados | completacion",
+      "text": "Texto completo de la pregunta",
+      "points": 2,
+      "correctAnswer": "Para abierta: la respuesta esperada o criterios de corrección. Para alternativas: 'A', 'B', 'C' o 'D'. Para verdadero_falso: 'V' o 'F'. Para completacion: la palabra o palabras correctas (separadas por comas si son varias). Para pareados: dejar vacío o no incluir.",
+      "options": ["A", "B", "C", "D"], // Solo para tipo alternativas. De lo contrario, omitir.
+      "justify": true, // Solo para tipo verdadero_falso. De lo contrario, omitir.
+      "matchingPairs": [ // Solo para tipo pareados. Exactamente 3 pares. De lo contrario, omitir.
+        {"colA": "Concepto 1", "colB": "Definición 1"},
+        {"colA": "Concepto 2", "colB": "Definición 2"},
+        {"colA": "Concepto 3", "colB": "Definición 3"}
+      ]
+    }
+  ]
+}`;
         }
 
         const response = await openai.chat.completions.create({
@@ -194,12 +202,13 @@ Devuelve ÚNICAMENTE un array JSON (sin markdown, sin bloques de código) con el
                 { role: "system", content: systemPrompt },
                 { role: "user", content: `Materia o contenido base:\n\n${text.substring(0, 6000)}` }
             ],
+            response_format: { type: "json_object" },
             temperature: 0.5,
         });
 
         const content = response.choices[0].message.content.trim();
-        const cleanJson = content.replace(/^```json/, '').replace(/```$/, '').trim();
-        return JSON.parse(cleanJson);
+        const parsed = JSON.parse(content);
+        return parsed.items || parsed;
     } catch (err) {
         console.error('Error llamando a la API de OpenAI:', err);
         throw err;
@@ -255,12 +264,12 @@ Devuelve ÚNICAMENTE un objeto JSON (sin markdown, sin bloques de código) con e
                 { role: "system", content: systemPrompt },
                 { role: "user", content: `Materia o contenido base:\n\n${text.substring(0, 6000)}` }
             ],
+            response_format: { type: "json_object" },
             temperature: 0.5,
         });
 
         const content = response.choices[0].message.content.trim();
-        const cleanJson = content.replace(/^```json/, '').replace(/```$/, '').trim();
-        return JSON.parse(cleanJson);
+        return JSON.parse(content);
     } catch (err) {
         console.error('Error llamando a la API de OpenAI para regenerar:', err);
         throw err;
